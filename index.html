@@ -141,11 +141,11 @@
   #modal.show ~ #prompt, #aim.show ~ #prompt, #mapPanel.show ~ #prompt, #modal.show ~ #joy, #aim.show ~ #joy, #mapPanel.show ~ #joy{display:none}
   body.nojoy #joy{display:none}
   #qbar{position:fixed;top:calc(var(--hud-h) + 2px);left:50%;transform:translateX(-50%);width:min(660px,calc(100vw - 16px));padding:10px 14px 12px;z-index:6;display:none}
-  #qbar.show{display:block}
-  #qmeta{font-size:13px;color:var(--sun);font-weight:700;margin:0 84px 3px 0;line-height:1.4}
+  #qbar.show{display:grid;grid-template-columns:1fr auto;column-gap:14px;align-items:start}
+  #qmeta{font-size:13px;color:var(--sun);font-weight:700;margin:0 84px 3px 0;line-height:1.4;grid-column:1 / -1} #qmsg{grid-column:1 / -1}
   #qtext{font-size:21px;font-weight:800;line-height:1.45}
   #qtext .ic{color:var(--sun)}
-  #qfig{display:none;width:220px;height:143px;background:#fff;border:3px solid var(--ink);border-radius:10px;margin:8px auto 0}
+  #qfig{display:none;width:200px;height:130px;background:#fff;border:3px solid var(--ink);border-radius:10px;margin:2px 0 0;grid-column:2}
   #qbar .msg{margin-top:8px;padding:7px 10px 7px 40px;font-size:15px} #qbar .msg::before{top:8px;width:20px;height:20px}
   #qQuit{position:absolute;right:8px;top:8px;padding:4px 10px 6px;font-size:12px;--b:rgba(255,255,255,.14);border-width:2px;box-shadow:none;color:#dfe5f5}
   #qbar.show ~ #sceneMenu, #modal.show ~ #sceneMenu{display:none}
@@ -228,7 +228,7 @@
     #menu,#sceneMenu{left:8px;right:8px;bottom:8px;transform:none;gap:5px;padding:6px;border-radius:14px;max-width:none}
     .dock{flex:1;min-width:0;padding:6px 2px 9px;font-size:12px} .dock .ico{width:24px;height:24px} .dock>.ic{width:22px;height:22px} .dock small{font-size:9.5px} .dnum{width:24px;height:24px;font-size:15px}
     #joy{left:14px;bottom:92px} #prompt{bottom:auto;top:calc(var(--hud-h) + 8px);font-size:15px;padding:7px 16px 8px}
-    #qbar{padding:8px 10px 10px} #qtext{font-size:17.5px} #qfig{width:160px;height:104px} #qmeta{font-size:12px}
+    #qbar{padding:8px 10px 10px} #qbar.show{display:block} #qtext{font-size:17.5px} #qfig{width:160px;height:104px;margin:8px auto 0} #qmeta{font-size:12px}
     #speech{font-size:15px;padding:8px 12px 10px} #speech small{font-size:12.5px}
     #aim,#mapPanel,#taskPanel{left:8px;bottom:8px} #aimCv{width:300px;height:179px} #mapCv{width:300px;height:205px}
     .card{padding:0 14px 14px;border-radius:14px} .card h2{margin:0 -14px 12px;padding:11px 14px 12px;font-size:19px} .card h2.win{font-size:22px;padding:16px}
@@ -242,7 +242,7 @@
     #mapTip{display:none !important} #mapZoomIn,#mapZoomOut{display:none}
     .loot{gap:6px} .loot-i{min-width:56px;flex:1;max-width:76px;padding:8px 2px 6px} .loot-i .ico{width:28px;height:28px} .loot-i b{font-size:17px} .loot-i small{font-size:11px;white-space:nowrap}
   }
-  @media (max-height:520px){ #worldPanel{max-height:calc(100vh - var(--hud-h) - 12px);top:calc(var(--hud-h) + 2px);bottom:auto;right:auto;width:330px} .wp-title small{display:none} .wp-list{gap:3px;margin:6px 0 8px} .wp-row{padding:3px 8px} #joy{bottom:84px} }
+  @media (max-height:520px){ #worldPanel{max-height:calc(100vh - var(--hud-h) - 12px);top:calc(var(--hud-h) + 2px);bottom:auto;right:auto;width:330px} .wp-title small{display:none} .wp-list{gap:3px;margin:6px 0 8px} .wp-row{padding:3px 8px} #joy{bottom:84px} #qfig{width:140px;height:91px} }
 </style>
 </head>
 <body>
@@ -904,7 +904,7 @@ const world = (() => {
     if (ok(player.position.x + dx, player.position.z)) player.position.x += dx;
     if (ok(player.position.x, player.position.z + dz)) player.position.z += dz;
   }
-  const canMove = () => (S.mode === 'camp' || S.mode === 'scene' || S.mode === 'collect' || S.mode === 'task') && !document.getElementById('modal').classList.contains('show');
+  const canMove = () => (S.mode === 'camp' || S.mode === 'scene' || S.mode === 'collect' || S.mode === 'task' || (S.mode === 'arc' && arc.kind === 'chase')) && !document.getElementById('modal').classList.contains('show');
   function teleport(x, z) { player.position.set(x, curHgt(Math.round(x), Math.round(z)), z); }
   function golemHit() { golemStomp = 1; playerShake = 1; }
   function chestOpen() { chestTarget = 1; golem.visible = false; }
@@ -1234,9 +1234,90 @@ const world = (() => {
   let portrait = false;
   function resize() { const w = innerWidth, h = innerHeight; portrait = w < h; renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = portrait ? 70 : 55; camera.updateProjectionMatrix(); }
   addEventListener('resize', resize); resize();
+  // ============================================================
+  //  變化關卡：追小羊、礦車衝刺、打地鼠、射箭靶、賽跑、蓋高塔
+  //  每一種都是「看題目，用不同的動作選答案」；出題與計分在遊戲層的 nextArc / arcPick
+  // ============================================================
+  let arcFloor = null, onArcPick = null, onArcOut = null, fogKeep = null;
+  const arc = { kind: '', n: 0, live: false, cx: 0, cz: 0, cd: 0, speed: 0, amp: 5, phase: 0, pt: 0, rz: 0, pz: 0, rsp: 0, step: 0, base: 0, rv: null };
+  const ARC_Y = 40, flat = c => new THREE.MeshLambertMaterial({ color: c });
+  const arcSheep = [0, 1, 2, 3].map(() => { const o = makeSheep(); o.lab.scale.set(3.6, .9, 1); o.lab.position.set(0, 2.5, 0); return o; });
+  const arcTargets = [0, 1, 2, 3].map(i => { const g = new THREE.Group(); block('log_side', 0, .6, 0, g, .18, 1.2, .18); const face = new THREE.Group(); face.position.set(0, 1.75, 0); block('fur_white', 0, 0, 0, face, 1.4, 1.4, .16); block(['wool1', 'wool2', 'wool3', 'wool4'][i], 0, 0, .05, face, .92, .92, .16); block('fur_white', 0, 0, .1, face, .4, .4, .16); g.add(face); const lab = makeLabel(''); lab.position.set(0, 3.2, 0); lab.scale.set(4.4, 1.1, 1); g.add(lab); g.visible = false; scene.add(g); return { g, face, lab, state: 0, t: 0, ph: 0, sp: 1 }; });
+  const arcGates = [0, 1, 2].map(i => { const g = new THREE.Group(), w = ['wool1', 'wool3', 'wool4'][i]; block(w, -1.6, 1.25, 0, g, .32, 2.5, .32); block(w, 1.6, 1.25, 0, g, .32, 2.5, .32); block(w, 0, 2.66, 0, g, 3.52, .32, .32); const lab = makeLabel(''); lab.position.set(0, 3.7, 0); lab.scale.set(5, 1.25, 1); g.add(lab); g.visible = false; scene.add(g); return { g, lab, state: 0 }; });
+  const trackG = new THREE.Group(), trackRows = []; trackG.visible = false; scene.add(trackG);
+  { const mA = flat(0x7a5633), mB = flat(0x6a4829), mRail = flat(0xc9ced6), mEdge = flat(0x3a4668);
+    for (let k = 0; k < 50; k++) { const row = new THREE.Group(); block('planks', 0, -.2, 0, row, 13.4, .4, 1, k % 2 ? mA : mB); [-2.1, 2.1].forEach(x => block('planks', x, .03, 0, row, .14, .08, 1, mRail)); [-6.85, 6.85].forEach(x => block('planks', x, .1, 0, row, .3, .5, 1, mEdge)); trackG.add(row); trackRows.push(row); } }
+  const finishG = new THREE.Group(); [-6.4, 6.4].forEach(x => block('log_side', x, 1.7, 0, finishG, .4, 3.4, .4)); for (let k = 0; k < 10; k++) block(k % 2 ? 'obsidian' : 'fur_white', -5.76 + k * 1.28, 3.5, 0, finishG, 1.28, .6, .3); { const lab = makeLabel('終點'); lab.position.set(0, 4.7, 0); lab.scale.set(4.4, 1.1, 1); finishG.add(lab); } finishG.visible = false; scene.add(finishG);
+  const cart = new THREE.Group(); block('iron', 0, .34, 0, cart, 1.2, .5, 1.6); block('obsidian', 0, .62, .76, cart, 1.2, .2, .1); block('obsidian', 0, .62, -.76, cart, 1.2, .2, .1); cart.visible = false; player.add(cart);
+  const arcPillar = []; for (let k = 0; k < 8; k++) { const b = block(k % 2 ? 'fur_white' : 'planks', 0, 0, 0, scene, 1.7, 1, 1.7); b.visible = false; arcPillar.push(b); }
+  const arcStar = block('gold', 0, 0, 0, scene, .8, .8, .8); arcStar.visible = false;
+  const arcHoles = [0, 1, 2, 3].map(() => { const b = block('obsidian', 0, 0, 0, scene, 1.8, .16, 1.8); b.visible = false; return b; });
+  function arcSky(on) {
+    if (on) { arcFloor = ARC_Y; fogKeep = [scene.fog.near, scene.fog.far]; scene.fog.near = 50; scene.fog.far = 120; trackG.visible = true; trackG.position.set(arc.cx, ARC_Y, 0); trackRows.forEach((r, k) => { r.position.z = arc.cz + 6 - k; }); player.position.set(arc.cx, ARC_Y, arc.cz); player.rotation.y = Math.PI; }
+    else { if (fogKeep) { scene.fog.near = fogKeep[0]; scene.fog.far = fogKeep[1]; fogKeep = null; } trackG.visible = false; }
+  }
+  function arcStart(kind) {
+    arcClear(); arc.kind = kind; arc.cx = player.position.x; arc.cz = player.position.z; arc.live = false; arc.n = 0; arc.step = 0; arc.speed = 0;
+    if (kind === 'runner' || kind === 'race') { arcSky(true); camMode = 'run'; cart.visible = kind === 'runner'; }
+    if (kind === 'race') { const rv = arc.rv = ((sceneU && SCENE_CFG[sceneU].mob === 'skeleton') ? skeletonPool : zombiePool)[0]; rv.g.visible = true; rv.state = 7; rv.t = 0; rv.g.scale.setScalar(1); rv.g.rotation.set(0, Math.PI, 0); rv.g.position.set(arc.cx + 3, ARC_Y, arc.cz); if (rv.ls) rv.lab.scale.copy(rv.ls); setLabel(rv.lab, '對手', '#fff', 'rgba(150,40,40,.85)'); player.position.x = arc.cx - 3; finishG.visible = true; finishG.position.set(arc.cx, ARC_Y, arc.cz - 21); arc.rz = 0; arc.pz = 0; arc.rsp = 21 / (8 * 15); }
+    if (kind === 'tower') { arc.base = curHgt(Math.round(arc.cx), Math.round(arc.cz)); arcFloor = arc.base; arcStar.visible = true; arcStar.position.set(arc.cx, arc.base + 10.5, arc.cz); camMode = 'follow'; }
+    if (kind === 'chase' || kind === 'whack' || kind === 'target') camMode = 'high';
+  }
+  function whackPlace() { const pos = portrait ? [[-2.7, -2.4], [2.7, -2.4], [-2.7, -6.2], [2.7, -6.2]] : [[-6, 1.2], [-3, -2.2], [3, -2.2], [6, 1.2]], order = shuffle([0, 1, 2, 3]); pos.forEach(([dx, dz], j) => { const x = arc.cx + dx, z = arc.cz + dz; arcHoles[j].position.set(x, curHgt(Math.round(x), Math.round(z)) + .09, z); arcHoles[j].visible = true; }); for (let i = 0; i < arc.n; i++) { const zb = zombies[i], [dx, dz] = pos[order[i]], x = arc.cx + dx, z = arc.cz + dz; zb.by = curHgt(Math.round(x), Math.round(z)); zb.g.position.set(x, zb.by - 2.7 * (1 - zb.up), z); } }
+  function arcRound(labels, T) {
+    const k = arc.kind, n = labels.length; arc.n = n; arc.live = true;
+    if (k === 'chase') { arcSheep.forEach((o, i) => { if (i >= n) { o.g.visible = false; o.state = 0; return; } const a = Math.PI / 4 + i * Math.PI * 2 / n + Math.random() * .5, r = 5 + Math.random() * 1.5, x = Math.max(-15, Math.min(15, player.position.x + Math.cos(a) * r)), z = Math.max(-15, Math.min(15, player.position.z + Math.sin(a) * r)); o.g.position.set(x, curHgt(Math.round(x), Math.round(z)), z); o.g.visible = true; o.g.scale.setScalar(1.25); o.state = 1; o.t = 0; o.dir = Math.random() * 6.28; o.turn = 1 + Math.random() * 2; setLabel(o.lab, labels[i]); }); arc.cd = .8; }
+    if (k === 'whack') { zombies = (sceneU && SCENE_CFG[sceneU].mob === 'skeleton') ? skeletonPool : zombiePool; defendClear(); for (let i = 0; i < n; i++) { const zb = zombies[i]; zb.g.visible = true; zb.state = 7; zb.up = 0; zb.t = 0; zb.g.scale.setScalar(1.15); zb.g.rotation.set(0, 0, 0); zb.ls = zb.ls || zb.lab.scale.clone(); zb.lab.scale.copy(zb.ls).multiplyScalar(portrait ? 1.3 : 1.1); setLabel(zb.lab, labels[i], '#fff', undefined, String(i + 1)); } arc.phase = 0; arc.pt = 0; whackPlace(); }
+    if (k === 'target') { arc.amp = portrait ? 2.5 : 5.5; const rows = shuffle([-2.8, 2, 4.2, 6.4]); arcTargets.forEach((o, i) => { if (i >= n) { o.g.visible = false; o.state = 0; return; } o.g.visible = true; o.state = 1; o.t = 0; o.face.rotation.x = 0; o.ph = Math.random() * 6.28; o.sp = (.45 + Math.random() * .35) * (i % 2 ? -1 : 1); const z = arc.cz + rows[i]; o.g.position.set(arc.cx, curHgt(Math.round(arc.cx), Math.round(z)), z); o.lab.scale.set(4.4, 1.1, 1).multiplyScalar(portrait ? 1.25 : 1); setLabel(o.lab, labels[i], '#fff', undefined, String(i + 1)); }); }
+    if (k === 'runner') { const xs = n === 2 ? [-2.1, 2.1] : [-4.2, 0, 4.2]; arcGates.forEach((o, i) => { if (i >= n) { o.g.visible = false; o.state = 0; return; } o.g.visible = true; o.state = 1; o.g.position.set(arc.cx + xs[i], ARC_Y, arc.cz - 36); setLabel(o.lab, labels[i]); }); arc.speed = 36 / (T || 14); }
+  }
+  function arcShoot(pos, cb) { player.lookAt(pos.x, player.position.y, pos.z); const start = player.position.clone().add(new THREE.Vector3(0, 1.4, 0)), end = pos.clone(); arrow.position.copy(start); arrow.visible = true; const t0 = performance.now(), dur = 320; anim = () => { const k = Math.min(1, (performance.now() - t0) / dur), p = start.clone().lerp(end, k); p.y += Math.sin(k * Math.PI) * .8; arrow.lookAt(p); arrow.position.copy(p); if (k >= 1) { arrow.visible = false; anim = null; } }; setTimeout(() => { arrow.visible = false; anim = null; cb && cb(); }, dur + 40); }
+  function arcTap(i) {
+    if (!arc.live || !onArcPick || i < 0 || i >= arc.n) return;
+    if (arc.kind === 'whack') { const zb = zombies[i]; if (zb.state !== 7 || zb.up < .6) return; arc.live = false; arcShoot(zb.g.position.clone().add(new THREE.Vector3(0, 1.3, 0)), () => onArcPick(i)); }
+    else if (arc.kind === 'target') { const o = arcTargets[i]; if (o.state !== 1) return; arc.live = false; arcShoot(o.g.position.clone().add(new THREE.Vector3(0, 1.75, 0)), () => onArcPick(i)); }
+  }
+  canvas.addEventListener('pointerdown', e => { if (!arc.live || (arc.kind !== 'whack' && arc.kind !== 'target')) return; const list = arc.kind === 'whack' ? zombies.slice(0, arc.n).map(z => z.g) : arcTargets.slice(0, arc.n).map(o => o.g); const r = canvas.getBoundingClientRect(), ndc = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); raycaster.setFromCamera(ndc, camera); const hits = raycaster.intersectObjects(list.filter(g => g.visible), true); if (!hits.length) return; let o = hits[0].object; while (o && !list.includes(o)) o = o.parent; arcTap(list.indexOf(o)); });
+  // 選完答案後的演出；ok 是答對或答錯
+  function arcResolve(i, ok) {
+    const k = arc.kind;
+    if (k === 'chase') { const o = arcSheep[i]; o.t = 0; if (ok) { o.state = 2; arc.live = false; arcSheep.forEach((p, j) => { if (j !== i && p.state === 1) { p.state = 3; p.t = 0; } }); } else o.state = 3; }
+    if (k === 'whack') { for (let j = 0; j < arc.n; j++) { const zb = zombies[j]; if (zb.state !== 7) continue; zb.t = 0; zb.state = ok && j === i ? 2 : 3; } }
+    if (k === 'target') arcTargets.forEach((o, j) => { if (o.state !== 1) return; o.t = 0; o.state = ok && j === i ? 2 : 3; });
+    if (k === 'runner' && ok) arcGates.forEach((o, j) => { if (j !== i && o.state === 1) o.state = 3; });
+    if (k === 'race') { if (ok) arc.pz = Math.min(21, arc.pz + 21 / 8); else arc.rz = Math.min(20.4, arc.rz + 1.3); }
+    if (k === 'tower' && ok && arc.step < 8) { const b = arcPillar[arc.step]; b.position.set(arc.cx, arc.base + arc.step + .5, arc.cz); b.visible = true; arc.step++; arcFloor = arc.base + arc.step; }
+    if (k !== 'chase' || ok) arc.live = false;
+  }
+  function arcTimeUp() { arc.live = false; arcResolve(-1, false); }
+  function arcClear() {
+    const k = arc.kind; arc.live = false; arc.kind = '';
+    arcSheep.forEach(o => { o.g.visible = false; o.state = 0; }); arcTargets.forEach(o => { o.g.visible = false; o.state = 0; }); arcGates.forEach(o => { o.g.visible = false; o.state = 0; }); arcPillar.forEach(b => { b.visible = false; }); arcHoles.forEach(b => { b.visible = false; }); arcStar.visible = false; finishG.visible = false; cart.visible = false;
+    if (k === 'whack' || k === 'race') defendClear();
+    if (k === 'runner' || k === 'race') { arcSky(false); player.position.set(arc.cx, curHgt(Math.round(arc.cx), Math.round(arc.cz)), arc.cz); player.rotation.y = 0; }
+    arcFloor = null;
+  }
+  function arcTick(fdt) {
+    const k = arc.kind; if (!k) return;
+    if (k === 'chase') { arc.cd -= fdt; arcSheep.forEach((o, i) => { if (!o.g.visible) return; const p = o.g.position;
+      if (o.state === 1) { o.turn -= fdt; if (o.turn <= 0) { o.dir += (Math.random() - .5) * 2.4; o.turn = 1 + Math.random() * 2; } const nx = p.x + Math.sin(o.dir) * 1.15 * fdt, nz = p.z + Math.cos(o.dir) * 1.15 * fdt; if (curSolid(nx, nz) || Math.hypot(nx - arc.cx, nz - arc.cz) > 8.5 || Math.abs(nx) > 15.5 || Math.abs(nz) > 15.5 || Math.abs(curHgt(Math.round(nx), Math.round(nz)) - p.y) > 1.3) o.dir += Math.PI * (.6 + Math.random() * .8); else { p.x = nx; p.z = nz; } p.y += (curHgt(Math.round(p.x), Math.round(p.z)) - p.y) * .3; o.g.rotation.y = o.dir; if (arc.live && arc.cd <= 0 && onArcPick && Math.hypot(p.x - player.position.x, p.z - player.position.z) < 1.25) { arc.cd = .8; onArcPick(i); } }
+      else if (o.state === 2) { o.t += fdt; p.y += Math.cos(Math.min(1, o.t * 1.6) * Math.PI) * .09; o.g.rotation.y += fdt * 10; if (o.t > .9) { o.g.visible = false; o.state = 0; } }
+      else if (o.state === 3) { o.t += fdt; o.g.scale.setScalar(Math.max(.01, 1.25 * (1 - o.t * 1.6))); if (o.t > .6) { o.g.visible = false; o.state = 0; } } }); }
+    if (k === 'whack') { arc.pt += fdt; if (arc.phase === 0 && arc.pt > 3.4 && arc.live) { arc.phase = 1; arc.pt = 0; } else if (arc.phase === 1 && arc.pt > .75) { arc.phase = 0; arc.pt = 0; if (arc.live) whackPlace(); }
+      for (let i = 0; i < arc.n; i++) { const zb = zombies[i]; if (zb.state !== 7) continue; zb.up += ((arc.phase === 0 ? 1 : 0) - zb.up) * Math.min(1, fdt * 9); zb.g.position.y = zb.by - 2.7 * (1 - zb.up) + Math.sin(t * 5 + i) * .05 * zb.up; } }
+    if (k === 'target') arcTargets.forEach(o => { if (!o.g.visible) return; const p = o.g.position; if (o.state === 1) { p.x = arc.cx + Math.sin(t * o.sp + o.ph) * arc.amp; p.y += (curHgt(Math.round(p.x), Math.round(p.z)) - p.y) * .2; } else if (o.state === 2) { o.t += fdt * 3; o.face.rotation.x = -Math.min(1, o.t) * 1.5; if (o.t > 1.7) { o.g.visible = false; o.state = 0; } } else if (o.state === 3) { o.t += fdt * 2; p.y -= fdt * 3.2; if (o.t > 1) { o.g.visible = false; o.state = 0; } } });
+    if (k === 'runner') { const v = arc.speed || 2.6; trackRows.forEach(r => { r.position.z += v * fdt; if (r.position.z > arc.cz + 6.5) r.position.z -= 50; });
+      player.position.x = Math.max(arc.cx - 5.6, Math.min(arc.cx + 5.6, player.position.x + input.x * 8.5 * fdt)); player.rotation.y = Math.PI - input.x * .35;
+      arcGates.forEach(o => { if (!o.g.visible) return; const p = o.g.position; p.z += v * fdt; if (o.state === 3) p.y -= fdt * 6; if (p.z > arc.cz + 7 || p.y < ARC_Y - 5) { o.g.visible = false; o.state = 0; } });
+      if (arc.live && onArcPick) { const g0 = arcGates.find(o => o.g.visible && o.state === 1); if (g0 && g0.g.position.z >= arc.cz - .5) { let bi = 0, bd = 1e9; arcGates.forEach((o, i) => { if (i < arc.n) { const d = Math.abs(o.g.position.x - player.position.x); if (d < bd) { bd = d; bi = i; } } }); arc.live = false; onArcPick(bi); } } }
+    if (k === 'race') { const rv = arc.rv; if (arc.live) arc.rz += arc.rsp * fdt; const rzT = arc.cz - arc.rz; if (Math.abs(rv.g.position.z - rzT) > .004) { rv.g.position.z += (rzT - rv.g.position.z) * Math.min(1, fdt * 5); rv.t += fdt * 8; rv.lL.rotation.x = Math.sin(rv.t) * .6; rv.lR.rotation.x = -Math.sin(rv.t) * .6; }
+      const dz = arc.cz - arc.pz - player.position.z; if (Math.abs(dz) > .03) { player.position.z += dz * Math.min(1, fdt * 5); player.rotation.y = Math.PI; walk += fdt * 16; legL.rotation.x = Math.sin(walk) * .9; legR.rotation.x = -Math.sin(walk) * .9; }
+      if (arc.live && arc.rz >= 21 && onArcOut) { arc.live = false; onArcOut(); } }
+    if (k === 'tower') { arcStar.rotation.y += fdt * 2; arcStar.position.y = arc.base + 10.5 + Math.sin(t * 2) * .15; }
+  }
   (function loop() {
     requestAnimationFrame(loop); t += .016; if (fighting || bossing) lastNow = performance.now();
-    const nowF = performance.now(), fdt = Math.min(.05, (nowF - lastF) / 1000); lastF = nowF; sceneTick(fdt); mapTick(fdt); taskTick(fdt); ambushTick(fdt);
+    const nowF = performance.now(), fdt = Math.min(.05, (nowF - lastF) / 1000); lastF = nowF; sceneTick(fdt); mapTick(fdt); taskTick(fdt); ambushTick(fdt); arcTick(fdt);
     fire.scale.set(1 + Math.sin(t * 21) * .1, 1 + Math.sin(t * 17) * .15, 1); fireLight.intensity = 1 + Math.sin(t * 23) * .25;
     smoke.forEach(m => { m.userData.t += .005; if (m.userData.t > 1) m.userData.t = 0; const k = m.userData.t; m.position.set(-1 + Math.sin(k * 6 + t) * .25, 1.4 + k * 3.2, 4 + Math.cos(k * 5) * .2); const s = .25 + k * .5; m.scale.set(s, s, s); });
     clouds.forEach(c => { c.position.x += .012; if (c.position.x > 60) c.position.x = -60; });
@@ -1249,7 +1330,7 @@ const world = (() => {
         tryMove(nx * sp, nz * sp); player.rotation.y = Math.atan2(nx, nz); walk += dt * 11;
         legL.rotation.x = Math.sin(walk) * .7; legR.rotation.x = -Math.sin(walk) * .7; armL.rotation.x = -Math.sin(walk) * .6; armR.rotation.x = Math.sin(walk) * .6;
       } else { legL.rotation.x *= .8; legR.rotation.x *= .8; armL.rotation.x = Math.sin(t * 1.5) * .12; armR.rotation.x = -Math.sin(t * 1.5) * .12; }
-      player.position.y += (curHgt(Math.round(player.position.x), Math.round(player.position.z)) - player.position.y) * .3;
+      player.position.y += ((arcFloor !== null ? arcFloor : curHgt(Math.round(player.position.x), Math.round(player.position.z))) - player.position.y) * .3;
       let near = null, best = 2.7; curSpots.forEach(sp => { const d = Math.hypot(sp.pos[0] - player.position.x, sp.pos[1] - player.position.z); if (d < best) { best = d; near = sp.key; } });
       if (near !== curSpot) { curSpot = near; if (onSpot) onSpot(curSpot); }
     }
@@ -1276,6 +1357,7 @@ const world = (() => {
     let camPos = fighting ? new THREE.Vector3(11.5 + Math.sin(t * .2) * .4, 8.5, 8.5) : bossing ? new THREE.Vector3(6.5 + Math.sin(t * .2) * .3, 6, 13.5) : ubossing ? new THREE.Vector3(mobPos.x + 5 + Math.sin(t * .3) * .3, 5.5, mobPos.z + 9) : player.position.clone().add(new THREE.Vector3(0, 7.5, 10));
     if (!fighting && !bossing && !ubossing && camMode !== 'follow') { // 場景關卡鏡頭：俯視（撿方塊、守衛戰）或對著魔王
       if (camMode === 'high') { camTarget = player.position.clone().add(new THREE.Vector3(0, .5, 0)); camPos = player.position.clone().add(new THREE.Vector3(0, 15.5, 10.5)); }
+      else if (camMode === 'run') { camTarget = new THREE.Vector3(arc.cx, ARC_Y + .5, player.position.z - 10.7); camPos = new THREE.Vector3(arc.cx, ARC_Y + 14, player.position.z + 12); }
       else if (camMode === 'gate') { camTarget = camFocus.clone().add(new THREE.Vector3(0, 1, -2)); camPos = camFocus.clone().add(new THREE.Vector3(0, 5.5, 8.5)); }
       else if (camMode === 'bridge') { camTarget = camFocus.clone().add(new THREE.Vector3(0, .5, 0)); camPos = camFocus.clone().add(new THREE.Vector3(0, 15.5, 11.5)); }
       else if (camMode === 'house') { camTarget = new THREE.Vector3(HOUSE.cx, .8, HOUSE.cz); camPos = new THREE.Vector3(HOUSE.cx, 12.5, HOUSE.cz + 12); }
@@ -1291,7 +1373,7 @@ const world = (() => {
     camera.position.lerp(camPos, (fighting || bossing || ubossing || camMode === 'focus') ? .03 : mapActive ? .08 : .1); camera.position.x += Math.sin(t * 50) * .15 * playerShake; camera.lookAt(camTarget);
     renderer.render(scene, camera);
   })();
-  return { setFight, foxHit, playerHit, foxFriendly, shootArrow, setAim, setBoss, golemHit, chestOpen, input, SPOTS, teleport, setOnSpot: f => { onSpot = f; f(curSpot); }, getSpot: () => curSpot, getSpots: () => curSpots, getPos: () => [player.position.x, player.position.z], STATIONS, setUnitBoss, unitBossHit,
+  return { arcStart, arcRound, arcResolve, arcTimeUp, arcTap, arcClear, setOnArc: (pick, out) => { onArcPick = pick; onArcOut = out; }, _arc: () => arc, arcPos: i => { const p = (arc.kind === 'whack' ? zombies[i].g : arc.kind === 'target' ? arcTargets[i].g : arc.kind === 'runner' ? arcGates[i].g : arcSheep[i].g).position; return [p.x, p.z]; }, arcScreen: i => { const g = arc.kind === 'whack' ? zombies[i].g : arcTargets[i].g, v = g.position.clone().add(new THREE.Vector3(0, 1.3, 0)).project(camera), r = canvas.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; }, setFight, foxHit, playerHit, foxFriendly, shootArrow, setAim, setBoss, golemHit, chestOpen, input, SPOTS, teleport, setOnSpot: f => { onSpot = f; f(curSpot); }, getSpot: () => curSpot, getSpots: () => curSpots, getPos: () => [player.position.x, player.position.z], STATIONS, setUnitBoss, unitBossHit,
     enterScene, exitScene, SCENE_SPOTS, collectSetup, collectPop, collectClear, setOnBlockHit: f => { onBlockHit = f; }, tapBlock: i => { if (ansBlocks[i].state === 1 && onBlockHit) { ansBlocks[i].state = 5; onBlockHit(i); } }, defendSpawn, defendShoot, defendClear, tapZombie, setOnZombie: (tap, reach) => { onZombieTap = tap; onZombieReach = reach; }, creeperSetup, creeperFuse, creeperBoom, creeperHurt, creeperHide, igolemSetup, igolemStomp, igolemHurt, igolemHide, setCam, mapShow, mapFocus, mapZoom, mapReset, setOnIslandPick: f => { onIslandPick = f; },
     stallShow, stallTray, villagerReact, buildBridge, bridgeHighlight, bridgeFill, bridgeCross, bridgeClear, collectPlace, carryBlock, dropCarried, setOnDeliver: f => { onDeliver = f; }, gateSetup, sheepSpawn, sheepGo, sheepArriveNow, gateClear, taskClear, setOnSheepArrive: f => { onSheepArrive = f; }, isCarrying: () => carried >= 0, setSpotLabels,
     ambushSpawn, ambushResolve, ambushClear, setOnAmbushReach: f => { onAmbushReach = f; }, houseRebuild, housePick, _amb: () => amb, houseCellScreen: (cx, cz) => { const v = new THREE.Vector3(cx, .2, cz).project(camera), r = canvas.getBoundingClientRect(); return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height]; } };
@@ -1887,9 +1969,47 @@ function startStage(u, i) {
   world.setSpotLabels(false); $('#prompt').classList.remove('show');
   if (TASKS[u] && TASKS[u][i]) return TASKS[u][i](u);
   if (i === 2) return startBuildStage(u);
-  S.mode = i === 0 ? 'collect' : 'defend'; world.setCam('high'); qbarShow();
-  if (i === 0) nextCollect(); else nextWave();
+  const kind = STAGE_KIND[u][i]; CUR.kind = kind; qbarShow();
+  if (kind === 'collect') { S.mode = 'collect'; world.setCam('high'); nextCollect(); }
+  else if (kind === 'defend') { S.mode = 'defend'; world.setCam('high'); nextWave(); }
+  else { S.mode = 'arc'; world.arcStart(kind); nextArc(); }
 }
+// ---------- 變化關卡：每個單元前兩關的玩法都不同 ----------
+const STAGE_KIND = { 1: ['collect', 'defend'], 2: ['runner', 'whack'], 3: ['chase', 'target'], 4: ['race', 'whack'], 6: ['chase', 'tower'], 7: ['runner', 'defend'], 8: ['target', 'race'], 9: ['collect', 'tower'] };
+const KIND = {
+  collect: { name: '撿方塊' }, defend: { name: '守衛戰' },
+  chase: { name: '追小羊', how: '羊會到處跑，走去碰背著正確答案的那一隻', walk: true },
+  runner: { name: '礦車衝刺', how: '左右移動，穿過正確答案的門', steer: true, max: 3, run: 14 },
+  whack: { name: '打地鼠', how: '怪物會冒出來又躲回去，點（或按數字鍵）正確答案的那一隻', T: 25 },
+  target: { name: '射箭靶', how: '箭靶會左右移動，點（或按數字鍵）正確答案的靶', T: 25 },
+  race: { name: '賽跑', how: '答對就往前衝一段，比對手先到終點', panel: true },
+  tower: { name: '蓋高塔', how: '答對就往上蓋一層，蓋到星星那麼高', panel: true },
+};
+const STAGE_ALIAS = { '7-0': '雪橇衝刺', '4-0': '沙漠賽跑', '8-1': '沼澤賽跑', '9-1': '疊蛋糕塔' };
+const arcMeta = () => { const K = KIND[CUR.kind]; $('#qmeta').textContent = `第 ${CUR.correct + 1} / ${CUR.need} 題 ・ ${K.how}${K.T ? ` ・ 剩 ${CUR.left} 秒` : ''}`; };
+function nextArc() {
+  if (S.mode !== 'arc') return; const K = KIND[CUR.kind], q = makeQuestion(CUR.u, CUR.correct >= 4); let ch = toChoice(q);
+  if (K.max && ch.labels.length > K.max) ch = { labels: shuffle([ch.ans, ...shuffle(ch.labels.filter(l => l !== ch.ans)).slice(0, K.max - 1)]), ans: ch.ans };
+  CUR.q = q; CUR.ch = ch; CUR.locked = false; CUR.wrongThis = false; CUR.left = K.T || 0; window.__q = q;
+  qbarQuestion(q, ''); arcMeta(); world.arcRound(ch.labels, K.run ? K.run - Math.min(2.5, CUR.correct * .35) : 0);
+  if (K.panel) { taskPanel(`<div class="amb-grid">${ch.labels.map((l, i) => `<button class="amb" data-i="${i}"><span class="n">${i + 1}</span>${l}</button>`).join('')}</div>`); $('#taskPanel').querySelectorAll('button.amb').forEach(b => b.onclick = () => arcPick(+b.dataset.i)); }
+  clearInterval(CUR.iv); if (K.T) CUR.iv = setInterval(() => { if (S.mode !== 'arc' || CUR.locked) return; CUR.left--; arcMeta(); if (CUR.left <= 0) arcOut(false); }, 1000);
+}
+function arcPick(i) {
+  if (S.mode !== 'arc' || CUR.locked || i < 0 || i >= CUR.ch.labels.length) return; const K = KIND[CUR.kind], lb = CUR.ch.labels[i], ok = lb === CUR.ch.ans;
+  if (K.panel) $('#taskPanel').querySelectorAll('button.amb').forEach((b, j) => { if (ok || !K.walk) b.disabled = true; if (CUR.ch.labels[j] === CUR.ch.ans) b.classList.add('right'); });
+  if (ok) { CUR.locked = true; clearInterval(CUR.iv); CUR.correct++; sfx.ok(); world.arcResolve(i, true); const amt = CUR.wrongThis ? 1 : 2; S[CUR.q.reward] += amt; hud(); qbarMsg(`${CUR.q.exp} 獲得 ${amt} 個${CUR.q.reward === 'wood' ? '木材' : '角尺碎片'}`, 'ok'); setTimeout(CUR.correct >= CUR.need ? winStage : nextArc, 1300); return; }
+  CUR.wrong++; CUR.wrongThis = true; sfx.bad(); S.hp--; hud(); world.playerHit(); world.arcResolve(i, false);
+  if (K.walk) { qbarMsg(`不是「${lb}」。${CUR.q.hint}`, 'bad'); if (S.hp <= 0) { CUR.locked = true; setTimeout(failStage, 800); } return; }   // 追小羊：這一題可以再追別隻
+  CUR.locked = true; clearInterval(CUR.iv); qbarMsg(`不是「${lb}」，正確答案是「${CUR.ch.ans}」。${CUR.q.exp}`, 'bad'); setTimeout(S.hp <= 0 ? failStage : nextArc, 2100);
+}
+// 時間到（打地鼠、射箭靶）或對手先到終點（賽跑）
+function arcOut(rival) {
+  if (S.mode !== 'arc' || CUR.locked) return; CUR.locked = true; clearInterval(CUR.iv); sfx.bad();
+  if (rival) { qbarMsg('對手先跑到終點了！', 'bad'); setTimeout(failStage, 1500); return; }
+  S.hp--; hud(); world.playerHit(); world.arcTimeUp(); qbarMsg(`時間到！正確答案是「${CUR.ch.ans}」。${CUR.q.exp}`, 'bad'); setTimeout(S.hp <= 0 ? failStage : nextArc, 2100);
+}
+world.setOnArc(i => arcPick(i), () => arcOut(true));
 function nextCollect() { if (S.mode !== 'collect') return; const q = makeQuestion(CUR.u, CUR.correct >= 4), ch = toChoice(q); CUR.q = q; CUR.ch = ch; CUR.locked = false; CUR.wrongThis = false; window.__q = q; qbarQuestion(q, `第 ${CUR.correct + 1} / ${CUR.need} 題 ・ 走去撞正確答案的方塊`); world.collectSetup(ch.labels); }
 world.setOnBlockHit(i => {
   if (S.mode === 'task' && TK.opts) { const sw = world.isCarrying(); world.carryBlock(i); qbarMsg(`${sw ? '換成' : '撿起'} ${TK.opts[i]}，走到橘色的缺口放上去${sw ? '' : '；撞到別的木板可以換'}`, 'hint'); return; }
@@ -1929,14 +2049,14 @@ function creeperRound() {
   creeperTick = setInterval(() => { const k = Math.min(1, (performance.now() - T0) / LIMIT); const bar = $('#fuseBar'); if (bar) bar.style.width = (100 - k * 100) + '%'; world.creeperFuse(k); if (k >= 1) finish(false, '時間到，苦力怕爆炸了！'); }, 100);
   bindAnswer(q, (v, b) => { if (done) return; const ok = isCorrect(q, v); markAnswer(q, ok, b); finish(ok, '答錯了，苦力怕爆炸了！'); });
 }
-function stopStage(toScene = true) { world.setSpotLabels(true); setTimeout(() => onSpotHandler(world.getSpot()), 50); if (creeperTick) { clearInterval(creeperTick); creeperTick = null; } clearTimeout(TK.timer); TK.opts = null; world.taskClear(); taskPanelHide(); world.collectClear(); world.defendClear(); world.creeperHide(); world.igolemHide(); world.setCam('follow'); qbarHide(); UB.onWin = UB.onLose = UB.onHit = UB.onMiss = null; UB.title = null; UB.asStage = false; UB.base = 0; if (toScene) { S.mode = 'scene'; renderSceneMenu(); } }
+function stopStage(toScene = true) { world.setSpotLabels(true); setTimeout(() => onSpotHandler(world.getSpot()), 50); if (creeperTick) { clearInterval(creeperTick); creeperTick = null; } clearTimeout(TK.timer); TK.opts = null; world.taskClear(); taskPanelHide(); world.collectClear(); world.defendClear(); world.arcClear(); clearInterval(CUR.iv); world.creeperHide(); world.igolemHide(); world.setCam('follow'); qbarHide(); UB.onWin = UB.onLose = UB.onHit = UB.onMiss = null; UB.title = null; UB.asStage = false; UB.base = 0; if (toScene) { S.mode = 'scene'; renderSceneMenu(); } }
 function winStage() {
   const u = CUR.u, i = CUR.stage; getStages(u)[i] = true; S.wood += 4; S.shard += 4; S.stone += 3; S.glass += 1; hud(); stopStage(false); sfx.craft(); renderSceneMenu();
   const next = i < 2 ? `<button class="primary" id="nextStage">前往第 ${i + 2} 關<i class="ic ic-next r"></i></button>` : bossOpen(u) ? `<button class="danger" id="nextStage"><i class="ic ic-skull"></i>挑戰魔王</button>` : '';
   openModal(`<h2 class="win">通過第 ${i + 1} 關 ${stageNames(u)[i]}！</h2>${loot({ wood: 4, shard: 4, stone: 3, glass: 1 })}<div class="stem center">${i < 2 ? `第 ${i + 2} 關「${stageNames(u)[i + 1]}」解鎖了。` : `魔王「${BOSS_NAME[SCENES[u].boss]}」出現在競技場！`}</div><div class="row center">${next}<button class="plain" id="backBtn">留在場景</button></div>`);
   $('#backBtn').onclick = () => { closeModal(); S.mode = 'scene'; }; const nb = $('#nextStage'); if (nb) nb.onclick = () => { closeModal(); S.mode = 'scene'; if (i < 2) { const [x, z] = world.SCENE_SPOTS['stage' + (i + 2)]; world.teleport(x, z + 2.5); startStage(u, i + 1); } else startSceneBoss(u); };
 }
-function failStage() { const u = CUR.u, i = CUR.stage; stopStage(false); S.hp = 3; hud(); openModal(`<h2 class="lose">差一點就過關了</h2><div class="stem">心用完了。可以再挑戰一次，或回營地採集多練幾題。</div><div class="row"><button class="primary" id="againBtn">再挑戰</button><button class="plain" id="backBtn">回場景</button></div>`); $('#againBtn').onclick = () => { closeModal(); S.mode = 'scene'; startStage(u, i); }; $('#backBtn').onclick = () => { closeModal(); S.mode = 'scene'; renderSceneMenu(); }; }
+function failStage() { const u = CUR.u, i = CUR.stage; stopStage(false); S.hp = 3; hud(); openModal(`<h2 class="lose">差一點就過關了</h2><div class="stem">這次沒有過關。可以再挑戰一次，或回營地採集多練幾題。</div><div class="row"><button class="primary" id="againBtn">再挑戰</button><button class="plain" id="backBtn">回場景</button></div>`); $('#againBtn').onclick = () => { closeModal(); S.mode = 'scene'; startStage(u, i); }; $('#backBtn').onclick = () => { closeModal(); S.mode = 'scene'; renderSceneMenu(); }; }
 function winSceneBoss() {
   const u = CUR.u, first = !getU(u).star; getU(u).star = true; S.wood += 8; S.shard += 8; S.stone += 5; S.glass += 3; hud(); stopStage(false); music.setTheme('camp'); sfx.craft(); renderSceneMenu();
   openModal(`<h2 class="win">打倒${BOSS_NAME[SCENES[u].boss]}！</h2>${loot({ star: first ? 1 : 0, wood: 8, shard: 8, stone: 5, glass: 3 })}<div class="stem center">${first ? `拿到第 ${u} 單元的星星！` : '再次獲勝！'}目前有 ${Object.values(S.units).filter(x => x.star).length} / 9 顆星星。</div><div class="row center"><button class="primary" id="mapBtn"><i class="ic ic-flag"></i>回群島地圖</button><button class="plain" id="backBtn">留在場景</button><button class="blue" id="exitBtn">回營地</button></div>`);
@@ -1944,7 +2064,7 @@ function winSceneBoss() {
   $('#backBtn').onclick = () => { closeModal(); S.mode = 'scene'; }; $('#exitBtn').onclick = exitScene;
 }
 function failBoss() { stopStage(false); S.hp = 3; hud(); music.setTheme('camp'); openModal(`<h2 class="lose">被魔王擊退了</h2><div class="stem">三個關卡都可以重玩來多練習，再回來挑戰。</div><div class="row"><button class="primary" id="backBtn">回場景</button></div>`); $('#backBtn').onclick = () => { closeModal(); S.mode = 'scene'; renderSceneMenu(); }; }
-$('#qQuit').onclick = () => { if (['collect', 'defend', 'zboss', 'task', 'gate'].includes(S.mode)) { stopStage(); music.setTheme('camp'); toast('已放棄這一關'); } };
+$('#qQuit').onclick = () => { if (['collect', 'defend', 'zboss', 'task', 'gate', 'arc'].includes(S.mode)) { stopStage(); music.setTheme('camp'); toast('已放棄這一關'); } };
 // 站點選單：進入場景、採集練習
 function openUnitMenu(u) {
   const U = UNITS[u], g = getU(u), st = getStages(u);
@@ -2001,7 +2121,8 @@ $('#mapZoomIn').onclick = () => world.mapZoom(.8); $('#mapZoomOut').onclick = ()
 //  任務式關卡（第 1 單元 數字平原）：村民的錢箱、數線吊橋、羊群過閘門
 //  原則：目標來自世界裡的村民與動物，答案用操作表達，錯了看得到後果
 // ============================================================
-const UNIT_STAGES = {}; // 任務式玩法保留程式但不啟用（使用者覺得不好玩）
+const UNIT_STAGES = {}; // 每個單元三關的名稱：前兩關依 STAGE_KIND，第三關是工匠試煉（任務式玩法的程式保留但不啟用）
+Object.keys(STAGE_KIND).forEach(u => { UNIT_STAGES[u] = [0, 1].map(i => STAGE_ALIAS[u + '-' + i] || KIND[STAGE_KIND[u][i]].name).concat('工匠試煉'); });
 const stageNames = u => UNIT_STAGES[u] || STAGE_NAME;
 const TASKS = {};
 const TK = {};
@@ -2178,11 +2299,11 @@ const KEYS = {};
 // 用實體按鍵碼判斷：中文輸入法（注音等）開著時 e.key 會變成 'Process'，但 e.code 仍是 KeyW / KeyA……
 const CODE_KEY = { KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd', KeyE: 'e', ArrowUp: 'arrowup', ArrowDown: 'arrowdown', ArrowLeft: 'arrowleft', ArrowRight: 'arrowright', Enter: 'enter', NumpadEnter: 'enter', Space: ' ', Digit1: '1', Digit2: '2', Digit3: '3', Digit4: '4', Numpad1: '1', Numpad2: '2', Numpad3: '3', Numpad4: '4' };
 const keyOf = e => CODE_KEY[e.code] || (e.key || '').toLowerCase();
-addEventListener('keydown', e => { const k = keyOf(e); KEYS[k] = true; if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k) && !(e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))) e.preventDefault(); if (S.mode === 'gate' && (k === 'a' || k === 'arrowleft')) { decideGate('left'); return; } if (S.mode === 'gate' && (k === 'd' || k === 'arrowright')) { decideGate('right'); return; } if ((S.mode === 'defend' || S.mode === 'zboss') && '1234'.includes(k) && k) { world.tapZombie(+k - 1); return; } if ((k === 'e' || k === 'enter' || k === ' ') && !e.repeat && world.getSpot() && canInteract()) { e.preventDefault(); interact(world.getSpot()); } });
+addEventListener('keydown', e => { const k = keyOf(e); KEYS[k] = true; if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k) && !(e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))) e.preventDefault(); if (S.mode === 'gate' && (k === 'a' || k === 'arrowleft')) { decideGate('left'); return; } if (S.mode === 'gate' && (k === 'd' || k === 'arrowright')) { decideGate('right'); return; } if ((S.mode === 'defend' || S.mode === 'zboss') && '1234'.includes(k) && k) { world.tapZombie(+k - 1); return; } if (S.mode === 'arc' && '1234'.includes(k) && k) { if (KIND[CUR.kind].panel) arcPick(+k - 1); else world.arcTap(+k - 1); return; } if ((k === 'e' || k === 'enter' || k === ' ') && !e.repeat && world.getSpot() && canInteract()) { e.preventDefault(); interact(world.getSpot()); } });
 addEventListener('keyup', e => { KEYS[keyOf(e)] = false; });
 addEventListener('blur', () => { for (const k in KEYS) KEYS[k] = false; });
 let joyActive = false, joyId = null;
-(function pollKeys() { document.body.classList.toggle('nojoy', !(['camp', 'scene', 'collect'].includes(S.mode) || (S.mode === 'task' && TK.move))); if (!joyActive) { let x = 0, z = 0; if (KEYS['a'] || KEYS['arrowleft']) x -= 1; if (KEYS['d'] || KEYS['arrowright']) x += 1; if (KEYS['w'] || KEYS['arrowup']) z -= 1; if (KEYS['s'] || KEYS['arrowdown']) z += 1; world.input.x = x; world.input.z = z; } requestAnimationFrame(pollKeys); })();
+(function pollKeys() { document.body.classList.toggle('nojoy', !(['camp', 'scene', 'collect'].includes(S.mode) || (S.mode === 'task' && TK.move) || (S.mode === 'arc' && (KIND[CUR.kind].walk || KIND[CUR.kind].steer)))); if (!joyActive) { let x = 0, z = 0; if (KEYS['a'] || KEYS['arrowleft']) x -= 1; if (KEYS['d'] || KEYS['arrowright']) x += 1; if (KEYS['w'] || KEYS['arrowup']) z -= 1; if (KEYS['s'] || KEYS['arrowdown']) z += 1; world.input.x = x; world.input.z = z; } requestAnimationFrame(pollKeys); })();
 // 虛擬搖桿（觸控裝置才顯示）
 const joy = $('#joy'), knob = $('#knob'); joy.classList.add('show'); // 桌機也顯示，可用滑鼠拖
 function joyMove(e) { const r = joy.getBoundingClientRect(), R = r.width / 2 - 22; let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2); const len = Math.hypot(dx, dy); if (len > R) { dx *= R / len; dy *= R / len; } knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; world.input.x = dx / R; world.input.z = dy / R; }
@@ -2205,7 +2326,7 @@ function showHelp(cb) {
     <div class="stem">九個單元是九座島。每座島有三關和一個魔王，答對題目就能蒐集方塊，回營地蓋自己的家。</div>
     <div class="msg ok">走動：電腦用 <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 或方向鍵（中文輸入法開著也可以），也能用滑鼠拖左下角的搖桿；手機用搖桿。走到祭壇、工作臺或牌子旁邊，按 <kbd>E</kbd> 或點黃色提示就能互動。</div>
     <div class="help-grid">
-      <div class="help-c"><b><i class="ico pick"></i>闖三關</b>撿方塊：走去撞正確答案。守衛戰：點正確答案的殭屍射箭。工匠試煉：動手算出答案。三關都過才能打魔王。</div>
+      <div class="help-c"><b><i class="ico pick"></i>闖三關</b>每座島的玩法都不一樣：撿方塊、追小羊、礦車衝刺、打地鼠、射箭靶、賽跑、蓋高塔。題目上方會寫怎麼玩，三關都過才能打魔王。</div>
       <div class="help-c"><b><i class="ico heart"></i>小心偷襲</b>走路時蜘蛛和殭屍會衝過來，15 秒內答對才能脫身，答錯會少一顆心。</div>
       <div class="help-c"><b><i class="ico wood"></i>蓋我的家</b>過關和打跑怪物會拿到木材、石頭、玻璃，回營地南邊的建地蓋房子。</div>
     </div>
