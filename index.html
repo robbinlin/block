@@ -4,162 +4,270 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>方塊學園 三上數學</title>
-<link rel="icon" href="data:,">
+<meta name="theme-color" content="#141a2b">
+<meta name="description" content="方塊學園：國小三年級上學期數學的方塊世界冒險，答對題目蒐集方塊、打魔王、蓋自己的家。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%238a5a33'/%3E%3Crect width='16' height='6' fill='%2358b947'/%3E%3Crect y='6' width='4' height='2' fill='%2358b947'/%3E%3Crect x='7' y='6' width='3' height='3' fill='%2358b947'/%3E%3Crect x='13' y='6' width='3' height='2' fill='%2358b947'/%3E%3Crect x='3' y='10' width='2' height='2' fill='%236b4423'/%3E%3Crect x='10' y='12' width='3' height='2' fill='%236b4423'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&amp;text=%E6%96%B9%E5%A1%8A%E5%AD%B8%E5%9C%92&amp;display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
-  :root{ --ok:#3fbf5f; --bad:#e04848; --ink:#3f3f3f; }
+  /* ===== 方塊學園 視覺系統：深色導航（抬頭列、底部工具列、地圖面板）＋ 淺色學習卡片（題目、說明、獎勵） ===== */
+  :root{
+    --ink:#141a2b; --ink2:#222b45; --ink3:#3a4668; --glass:rgba(20,26,43,.84);
+    --paper:#fffaf0; --paper2:#f6ecd8; --line:#dccfb2; --text:#27304a; --mute:#6b7389;
+    --go:#ff8a1f; --sky:#3b8cff; --leaf:#46b94a; --sun:#ffd23f; --ok:#2fae4e; --bad:#e5484d;
+    --r:10px; --hud-h:58px;
+    --font:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+    --display:"Dela Gothic One","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  }
   *{box-sizing:border-box}
-  html,body{margin:0;height:100%;background:#000;font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",sans-serif;color:var(--ink);overflow:hidden}
+  html,body{margin:0;height:100%;background:#0d1322;font-family:var(--font);color:var(--text);overflow:hidden;-webkit-text-size-adjust:100%}
   #world{position:fixed;inset:0;display:block}
-  /* 像素圖示：由貼圖集產生，CSS 變數在程式裡設定 */
-  .ico,.mat{display:inline-block;width:22px;height:22px;background-size:contain;background-repeat:no-repeat;image-rendering:pixelated;vertical-align:-5px;margin-right:4px}
+  /* 像素圖示：彩色的由貼圖集產生（.ico、.mat），單色的由點陣遮罩產生（.ic） */
+  .ico,.mat{display:inline-block;width:22px;height:22px;background-size:contain;background-repeat:no-repeat;image-rendering:pixelated;vertical-align:-5px;margin-right:4px;flex:none}
   .mat{width:18px;height:18px;vertical-align:-3px;margin-right:2px}
   .stone{background-image:var(--ico-stone)} .glass{background-image:var(--ico-glass)} .wood{background-image:var(--ico-wood)} .shard{background-image:var(--ico-shard)} .pick{background-image:var(--ico-pick)} .craft{background-image:var(--ico-craft)}
   .fox{background-image:var(--ico-fox)} .bow{background-image:var(--ico-bow)} .square{background-image:var(--ico-square)} .paper{background-image:var(--ico-paper)}
   .heart{background-image:var(--ico-heart)} .heart0{background-image:var(--ico-heart0)} .chest{background-image:var(--ico-chest)} .map{background-image:var(--ico-map)} .star{background-image:var(--ico-star)} .face{background-image:var(--ico-face)}
-  #hearts .ico{margin-right:0;width:26px;height:26px;vertical-align:-7px}
-  /* 石頭按鈕 */
-  button{font-family:inherit;font-size:17px;font-weight:700;color:#fff;text-shadow:2px 2px 0 rgba(0,0,0,.55);background:#6f6f6f;border:2px solid #000;border-radius:0;padding:10px 18px;cursor:pointer;box-shadow:inset 2px 2px 0 rgba(255,255,255,.45),inset -2px -3px 0 rgba(0,0,0,.45);image-rendering:pixelated}
-  button:hover{background:#7d8ad6;color:#ffffa0}
-  button:active{box-shadow:inset -2px -2px 0 rgba(255,255,255,.3),inset 2px 3px 0 rgba(0,0,0,.45);transform:translateY(1px)}
-  button.primary{background:#c96a1e} button.primary:hover{background:#e07a2a}
-  button.blue{background:#3a7bd5} button.blue:hover{background:#4a8de8}
-  button.plain{background:#8a8a8a}
-  button.ghost{background:#5a5a5a}
-  button:disabled{background:#4a4a4a;color:#a0a0a0;cursor:not-allowed;box-shadow:inset 2px 2px 0 rgba(255,255,255,.15),inset -2px -3px 0 rgba(0,0,0,.4)}
-  button:disabled:hover{background:#4a4a4a;color:#a0a0a0}
+  .ic{display:inline-block;width:1.15em;height:1.15em;vertical-align:-.2em;margin-right:.32em;background:currentColor;-webkit-mask:center/contain no-repeat;mask:center/contain no-repeat;flex:none}
+  .ic.r{margin:0 0 0 .32em}
+  .todo{display:inline-block;width:.8em;height:.8em;border:2px solid currentColor;border-radius:3px;opacity:.55;vertical-align:-.05em;margin-right:.2em}
+  kbd{display:inline-block;min-width:1.7em;padding:1px 6px 3px;margin:0 2px;font:700 .85em var(--font);text-align:center;color:var(--text);background:#fff;border:2px solid var(--ink);border-radius:6px;box-shadow:0 2px 0 var(--ink)}
+  /* 按鈕：厚邊框加下緣陰影，按下去會沉 */
+  button{font:700 16px/1.2 var(--font);color:#fff;background:var(--b,#7c88a6);border:3px solid var(--ink);border-radius:var(--r);padding:10px 16px 13px;cursor:pointer;box-shadow:inset 0 -5px 0 rgba(0,0,0,.2),inset 0 2px 0 rgba(255,255,255,.28);text-shadow:0 1px 0 rgba(0,0,0,.28);transition:transform .06s,filter .12s;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button:hover{filter:brightness(1.08)}
+  button:active{transform:translateY(2px);box-shadow:inset 0 -2px 0 rgba(0,0,0,.2),inset 0 2px 0 rgba(255,255,255,.2)}
+  button:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+  button.primary{--b:var(--go)} button.blue{--b:var(--sky)} button.green{--b:var(--leaf)} button.danger{--b:var(--bad)}
+  button.plain{--b:#efe6d2;color:var(--text);text-shadow:none}
+  button.ghost{--b:transparent;color:var(--mute);text-shadow:none;box-shadow:none;border-color:var(--line)}
+  button:disabled{--b:#59617a;color:#a9b0c6;cursor:not-allowed;text-shadow:none;box-shadow:inset 0 -5px 0 rgba(0,0,0,.14)}
+  button:disabled:hover{filter:none} button:disabled:active{transform:none}
   /* 抬頭顯示 */
-  #hud{position:fixed;top:0;left:0;right:0;display:flex;gap:8px;padding:10px 12px;align-items:center;pointer-events:none;z-index:5;flex-wrap:wrap}
-  .chip{background:rgba(0,0,0,.55);border:2px solid #000;box-shadow:inset 0 0 0 2px #8b8b8b;color:#fff;text-shadow:2px 2px 0 rgba(0,0,0,.6);padding:5px 12px;font-weight:700;font-size:16px;pointer-events:auto}
-  .chip small{font-weight:400;opacity:.8}
-  #musicBtn{padding:5px 10px;font-size:14px;box-shadow:inset 0 0 0 2px #8b8b8b;cursor:pointer}
-  #menu{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);display:flex;gap:8px;justify-content:center;padding:8px;background:rgba(0,0,0,.5);border:2px solid #000;box-shadow:inset 0 0 0 2px #8b8b8b;z-index:5;max-width:96vw;flex-wrap:wrap}
-  /* 面板 */
-  #modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:10;padding:12px}
+  #hud{position:fixed;top:0;left:0;right:0;display:flex;gap:8px;padding:10px 12px;align-items:center;pointer-events:none;z-index:5}
+  .chip{display:inline-flex;align-items:center;gap:5px;height:38px;padding:0 12px;background:var(--glass);border:2px solid var(--ink);border-radius:var(--r);color:#fff;font-weight:800;font-size:16px;pointer-events:auto;box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 3px 8px rgba(0,0,0,.25);white-space:nowrap}
+  .chip .ico{margin:0;vertical-align:0}
+  .chip small{font-weight:500;opacity:.7;font-size:12px}
+  #hearts{gap:2px;padding:0 9px} #hearts .ico{width:24px;height:24px}
+  .chip.res{gap:0;padding:0 4px} .chip.res>span{display:inline-flex;align-items:center;gap:5px;padding:0 9px} .chip.res>span+span{border-left:2px solid rgba(255,255,255,.14)}
+  .chip.gold{color:var(--sun)}
+  #gear.none,#treasureChip.none{display:none} #gear .ico{margin:0 1px}
+  .hud-sp{flex:1} .hud-break{display:none}
+  .iconbtn{width:40px;height:38px;padding:0 0 3px;display:inline-flex;align-items:center;justify-content:center;--b:var(--ink2);font-size:18px;pointer-events:auto;box-shadow:inset 0 -4px 0 rgba(0,0,0,.25),inset 0 2px 0 rgba(255,255,255,.16)}
+  .iconbtn .ic{margin:0} .iconbtn.off .ic{opacity:.35} .iconbtn.off{position:relative} .iconbtn.off::after{content:"";position:absolute;left:7px;right:7px;top:50%;height:3px;margin-top:-3px;background:var(--bad);transform:rotate(-38deg);border-radius:2px}
+  /* 底部工具列（營地、單元場景共用） */
+  #menu,#sceneMenu{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);display:flex;gap:8px;padding:8px;background:var(--glass);border:3px solid var(--ink);border-radius:16px;z-index:5;max-width:calc(100vw - 16px);box-shadow:0 8px 24px rgba(0,0,0,.35)}
+  #sceneMenu{display:none}
+  .dock{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:94px;padding:8px 8px 11px;font-size:14px;line-height:1.15;white-space:nowrap}
+  .dock .ico{width:28px;height:28px;margin:0} .dock>.ic{width:26px;height:26px;margin:0}
+  .dock small{font-size:10.5px;font-weight:500;opacity:.92;margin-top:-1px}
+  .dock.locked{--b:#59617a;color:#cfd5e6} .dock.locked .ico{filter:grayscale(1) opacity(.6)}
+  .dock .badge{position:absolute;top:-9px;right:-7px;min-width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:var(--ink);border:2px solid var(--sun);border-radius:50%;color:var(--sun);font-size:12px} .dock .badge .ic{margin:0;width:11px;height:11px} .dock .badge .ico{width:14px;height:14px;margin:0}
+  .dnum{width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.28);border-radius:8px;font-size:17px;font-weight:900} .dnum .ic{margin:0;width:16px;height:16px} .dnum .ico{margin:0}
+  body.inscene #menu{display:none} body.inscene #sceneMenu{display:flex}
+  /* 學習卡片 */
+  #modal{position:fixed;inset:0;background:rgba(9,13,26,.66);display:none;align-items:center;justify-content:center;z-index:10;padding:14px 14px 22px}
   #modal.show{display:flex}
-  .card{background:#c6c6c6;border:3px solid;border-color:#fff #555 #555 #fff;outline:2px solid #000;width:min(720px,100%);max-height:94vh;overflow:auto;padding:16px 18px;box-shadow:0 10px 40px rgba(0,0,0,.6)}
-  .card h2{margin:0 0 8px;font-size:22px;color:#2b2b2b}
-  .card h2 span{font-size:14px;font-weight:400;opacity:.7;margin-left:8px}
-  .stem{font-size:19px;line-height:1.5;margin:8px 0 10px}
-  canvas.fig{display:block;background:#fff;border:2px solid #373737;box-shadow:inset 0 0 0 2px #8b8b8b;margin:6px auto 12px;max-width:100%}
-  .opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
-  .opts button{font-size:18px;padding:12px 10px;background:#8b8b8b}
-  .opts button.sel{background:#7d8ad6}
-  .opts button.ok{background:#3fa35a}
-  .opts button.bad{background:#c94040}
+  .card{position:relative;background:var(--paper);color:var(--text);border:3px solid var(--ink);border-radius:16px;width:min(720px,100%);max-height:calc(100vh - 44px);max-height:calc(100dvh - 44px);overflow:auto;padding:0 20px 18px;box-shadow:0 8px 0 var(--ink),0 26px 60px rgba(0,0,0,.5);animation:cardIn .22s cubic-bezier(.2,1.3,.4,1)}
+  @keyframes cardIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+  .card h2{margin:0 -20px 14px;padding:13px 20px 14px;background:var(--ink2);color:#fff;font-size:21px;font-weight:900;display:flex;align-items:center;flex-wrap:wrap;gap:2px 10px;border-bottom:3px solid var(--ink);position:sticky;top:0;z-index:2}
+  .card h2 .ico{width:26px;height:26px;margin:0;vertical-align:0}
+  .card h2>span{font-size:13px;font-weight:500;color:#b7c1dc;margin:0}
+  .card h2.win{background:linear-gradient(180deg,#ffb53a,#ff8a1f);justify-content:center;text-align:center;font-size:25px;padding:20px;text-shadow:0 2px 0 rgba(0,0,0,.25)}
+  .card h2.lose{background:linear-gradient(180deg,#6d7895,#4b5674);justify-content:center}
+  .pips{display:flex;gap:5px;margin-left:auto} .pips i{width:14px;height:14px;border-radius:4px;background:rgba(255,255,255,.2);border:2px solid rgba(0,0,0,.35)} .pips i.done{background:var(--leaf)} .pips i.cur{background:var(--sun);animation:pulse 1.2s infinite}
+  @keyframes pulse{50%{transform:scale(1.25)}}
+  .stem{font-size:20px;line-height:1.6;margin:8px 0 12px;font-weight:500} .stem b{font-weight:800} .stem.center{text-align:center}
+  canvas.fig{display:block;background:#fff;border:3px solid var(--ink);border-radius:12px;margin:6px auto 14px;max-width:100%}
+  .opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+  .opts button{--b:#fff;color:var(--text);text-shadow:none;font-size:20px;font-weight:800;padding:14px 10px 17px;box-shadow:inset 0 -5px 0 var(--line)}
+  .opts button:hover{--b:#fff6d6;filter:none} .opts button.sel{--b:#d6e7ff}
+  .opts button.ok{--b:var(--leaf);color:#fff;box-shadow:inset 0 -5px 0 rgba(0,0,0,.2)} .opts button.bad{--b:var(--bad);color:#fff;box-shadow:inset 0 -5px 0 rgba(0,0,0,.2);animation:shake .32s}
+  @keyframes shake{25%{transform:translateX(-6px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
   .inrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
-  .inrow label{font-weight:700;font-size:18px}
-  .inrow input{width:92px;font-size:22px;padding:8px 6px;border:2px solid #373737;box-shadow:inset 0 0 0 2px #8b8b8b;text-align:center;font-family:inherit;margin:0 6px;background:#fff}
-  .inrow input.ok{background:#8fd99f} .inrow input.bad{background:#f0a0a0}
-  .ni{font-size:22px;padding:6px;border:2px solid #373737;box-shadow:inset 0 0 0 2px #8b8b8b;text-align:center;font-family:inherit;margin:0 4px;background:#fff}
-  .ni.ok,.vd.ok{background:#8fd99f} .ni.bad,.vd.bad{background:#f0a0a0}
+  .inrow label{font-weight:700;font-size:19px}
+  .inrow input,.ni,.vd{font-family:inherit;font-weight:800;color:var(--text);text-align:center;background:#fff;border:3px solid var(--ink);border-radius:10px;box-shadow:inset 0 3px 0 rgba(20,26,43,.08);outline:none}
+  .inrow input{width:96px;font-size:22px;padding:8px 6px;margin:0 6px} .ni{font-size:22px;padding:6px;margin:0 4px}
+  .inrow input:focus,.ni:focus,.vd:focus{border-color:var(--sky);box-shadow:0 0 0 4px rgba(59,140,255,.25)}
+  .inrow input.ok,.ni.ok,.vd.ok{background:#c9f2cf;border-color:var(--ok)} .inrow input.bad,.ni.bad,.vd.bad{background:#ffd3d3;border-color:var(--bad)}
   .vgrid{display:grid;justify-content:center;font:bold 32px/1.5 monospace;text-align:center;margin:10px 0}
-  .vgrid .vline{border-top:3px solid #222;height:6px}
-  .vd{width:42px;font:bold 28px monospace;text-align:center;border:2px solid #373737;box-shadow:inset 0 0 0 2px #8b8b8b;padding:2px 0;margin:2px 3px;background:#fff}
+  .vgrid .vline{border-top:3px solid var(--ink);height:6px}
+  .vd{width:44px;font:bold 28px monospace;padding:2px 0;margin:2px 3px;border-radius:8px}
   .eq{font-size:21px;font-weight:700;margin:8px 0;display:flex;align-items:center;flex-wrap:wrap;gap:4px}
-  .eq.total{border-top:3px dashed #555;padding-top:10px}
-  .web{background:#eef3f7;border:2px solid #373737;padding:8px 14px;margin:6px 0}
+  .eq.total{border-top:3px dashed var(--line);padding-top:10px}
+  .web{background:#fff;border:3px solid var(--line);border-radius:12px;padding:8px 14px;margin:6px 0}
   .tools{justify-content:center}
   .ktxt{font-size:20px;min-width:96px;text-align:center}
-  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
-  .msg{border:2px solid #000;padding:10px 12px;margin-top:10px;font-size:16px;line-height:1.5;box-shadow:inset 2px 2px 0 rgba(255,255,255,.35),inset -2px -2px 0 rgba(0,0,0,.25)}
-  .msg.hint{background:#f0d87a}
-  .msg.ok{background:#8fd99f}
-  .msg.bad{background:#f0a0a0}
-  .progress{font-size:14px;opacity:.7}
-  .recipe{display:flex;align-items:center;gap:12px;background:#8b8b8b;border:2px solid;border-color:#373737 #fff #fff #373737;color:#fff;text-shadow:1px 1px 0 rgba(0,0,0,.5);padding:10px 12px;margin:8px 0}
-  .recipe .name{font-weight:700;font-size:18px;flex:1}
-  .recipe .need{font-size:15px;opacity:.9}
-  .recipe .owned{color:#9dffb0;font-weight:700}
-  #aim{position:fixed;left:14px;bottom:90px;display:none;z-index:6;background:#c6c6c6;border:3px solid;border-color:#fff #555 #555 #fff;outline:2px solid #000;padding:10px;box-shadow:0 6px 24px rgba(0,0,0,.5)}
-  #aim.show{display:block}
-  #mapPanel{position:fixed;left:14px;bottom:90px;display:none;z-index:6;background:#c6c6c6;border:3px solid;border-color:#fff #555 #555 #fff;outline:2px solid #000;padding:10px;box-shadow:0 6px 24px rgba(0,0,0,.5)}
-  #mapPanel.show{display:block}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+  .row.center{justify-content:center}
+  .msg{position:relative;border:3px solid;border-radius:12px;padding:10px 14px 10px 44px;margin-top:12px;font-size:16.5px;line-height:1.55}
+  .msg::before{content:"";position:absolute;left:12px;top:11px;width:22px;height:22px;background:currentColor;-webkit-mask:center/contain no-repeat;mask:center/contain no-repeat}
+  .msg.hint{background:#fff3c4;border-color:#e3b93a;color:#5b4500} .msg.hint::before{-webkit-mask-image:var(--ic-bulb);mask-image:var(--ic-bulb);background:#c98f00}
+  .msg.ok{background:#dff6e2;border-color:var(--ok);color:#14532d} .msg.ok::before{-webkit-mask-image:var(--ic-check);mask-image:var(--ic-check);background:var(--ok)}
+  .msg.bad{background:#ffe3e3;border-color:var(--bad);color:#7a1c1f} .msg.bad::before{-webkit-mask-image:var(--ic-cross);mask-image:var(--ic-cross);background:var(--bad)}
+  .progress{font-size:14px;color:var(--mute)}
+  .recipe{display:flex;align-items:center;gap:12px;background:#fff;border:3px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0}
+  .recipe>div{flex:1} .recipe .name{font-weight:800;font-size:18px} .recipe .need{font-size:14.5px;color:var(--mute);line-height:1.6;margin-top:2px}
+  .recipe .owned{display:inline-flex;align-items:center;color:var(--ok);font-weight:700;font-size:14px;margin-left:6px}
+  .recipe button{flex:none;min-width:92px}
+  .note{font-size:13px;color:var(--mute);margin-top:12px;line-height:1.6}
+  /* 獎勵與慶祝 */
+  .loot{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:16px 0 8px}
+  .loot-i{min-width:78px;background:#fff;border:3px solid var(--ink);border-radius:12px;padding:10px 8px 8px;text-align:center;box-shadow:0 4px 0 var(--line);animation:lootIn .45s cubic-bezier(.2,1.5,.4,1) both}
+  .loot-i .ico{display:block;width:36px;height:36px;margin:0 auto 4px} .loot-i b{display:block;font-size:20px;font-weight:900;color:#d9650a} .loot-i small{font-size:12px;color:var(--mute)}
+  .loot-i.gold{background:#fff6cf;border-color:#c98f00}
+  @keyframes lootIn{from{opacity:0;transform:translateY(16px) scale(.6)}to{opacity:1;transform:none}}
+  .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:11} .confetti i{position:absolute;top:-16px;width:10px;height:10px;animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(105vh) rotate(540deg)}}
+  /* 場景內的浮動面板 */
+  .float{background:var(--glass);border:3px solid var(--ink);border-radius:14px;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+  #aim,#mapPanel,#taskPanel{position:fixed;left:14px;bottom:14px;display:none;z-index:6;padding:10px}
+  #aim.show,#mapPanel.show,#taskPanel.show{display:block}
   #aim.show ~ #menu, #mapPanel.show ~ #menu{display:none}
-  #prompt{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);display:none;z-index:6;background:#c6c6c6;border:3px solid;border-color:#fff #555 #555 #fff;outline:2px solid #000;padding:8px 18px;font-weight:700;font-size:17px;cursor:pointer;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+  #taskPanel{width:min(440px,calc(100vw - 16px))} #modal.show ~ #taskPanel{display:none}
+  #mapCv{display:block;border:3px solid var(--ink);border-radius:10px;background:#d7c190;image-rendering:pixelated}
+  #mapRow{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap;font-weight:700}
+  #mapRow span{width:100%} #mapRow button{padding:8px 14px 11px}
+  #aimCv{display:block;border:3px solid var(--ink);border-radius:10px;background:#fff;touch-action:none;cursor:grab;image-rendering:pixelated}
+  #aimRow{display:flex;gap:8px;align-items:center;margin-top:8px;font-weight:700}
+  #aimRow input{flex:1;accent-color:var(--go)}
+  #prompt{position:fixed;left:50%;bottom:112px;transform:translateX(-50%);display:none;z-index:6;background:var(--sun);color:var(--ink);border:3px solid var(--ink);border-radius:999px;padding:8px 20px 9px;font-weight:800;font-size:17px;cursor:pointer;text-align:center;box-shadow:0 5px 0 var(--ink),0 10px 20px rgba(0,0,0,.3);animation:bob 1.4s ease-in-out infinite}
   #prompt.show{display:block}
-  #prompt small{display:block;font-weight:400;font-size:13px;opacity:.75}
-  #prompt:hover{background:#d8d8d8}
-  #joy{position:fixed;left:18px;bottom:110px;width:130px;height:130px;border-radius:50%;background:rgba(0,0,0,.35);border:3px solid rgba(255,255,255,.55);display:none;z-index:6;touch-action:none}
+  #prompt small{display:block;font-weight:500;font-size:12.5px;opacity:.8}
+  @keyframes bob{50%{transform:translate(-50%,-5px)}}
+  #joy{position:fixed;left:18px;bottom:112px;width:132px;height:132px;border-radius:50%;background:rgba(20,26,43,.42);border:3px solid rgba(255,255,255,.6);display:none;z-index:6;touch-action:none}
   #joy.show{display:block}
-  #knob{position:absolute;left:50%;top:50%;width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.8);border:3px solid #000;transform:translate(-50%,-50%);pointer-events:none}
+  #knob{position:absolute;left:50%;top:50%;width:58px;height:58px;border-radius:50%;background:#fff;border:3px solid var(--ink);box-shadow:inset 0 -5px 0 rgba(0,0,0,.16);transform:translate(-50%,-50%);pointer-events:none}
   #modal.show ~ #prompt, #aim.show ~ #prompt, #mapPanel.show ~ #prompt, #modal.show ~ #joy, #aim.show ~ #joy, #mapPanel.show ~ #joy{display:none}
-  #qbar{position:fixed;top:60px;left:50%;transform:translateX(-50%);width:min(620px,94vw);background:#c6c6c6;border:3px solid;border-color:#fff #555 #555 #fff;outline:2px solid #000;padding:8px 12px;z-index:6;display:none;box-shadow:0 4px 14px rgba(0,0,0,.4)}
-  #qbar.show{display:block}
-  #qmeta{font-size:13px;opacity:.75;margin-bottom:2px}
-  #qtext{font-size:18px;font-weight:700;line-height:1.4}
-  #qfig{display:none;width:220px;height:143px;background:#fff;border:2px solid #373737;margin:6px auto 0}
-  #qbar .msg{margin-top:6px;padding:6px 10px;font-size:15px}
-  #qQuit{position:absolute;right:-2px;top:-2px;padding:4px 10px;font-size:12px}
-  #sceneMenu{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);display:none;gap:8px;justify-content:center;padding:8px;background:rgba(0,0,0,.5);border:2px solid #000;box-shadow:inset 0 0 0 2px #8b8b8b;z-index:5;max-width:96vw;flex-wrap:wrap}
-  #sceneMenu button{padding:10px 12px;font-size:15px}
-  body.inscene #menu{display:none} body.inscene #sceneMenu{display:flex}
-  #qbar.show ~ #sceneMenu, #modal.show ~ #sceneMenu{display:none}
   body.nojoy #joy{display:none}
-  #worldPanel{position:fixed;left:14px;top:60px;width:320px;max-height:calc(100vh - 80px);overflow:auto;display:none;z-index:7;background:#c6c6c6;border:3px solid;border-color:#fff #555 #555 #fff;outline:2px solid #000;padding:12px;box-shadow:0 6px 24px rgba(0,0,0,.5)}
-  #mapCtl{position:fixed;right:14px;bottom:14px;display:none;z-index:7;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;background:rgba(0,0,0,.5);border:2px solid #000;box-shadow:inset 0 0 0 2px #8b8b8b;padding:8px}
-  #mapCtl small{width:100%;text-align:right;color:#ddd;font-size:12px}
-  #mapCtl button{padding:8px 12px;font-size:14px}
-  body.inmap #worldPanel{display:block} body.inmap #mapCtl{display:flex} body.inmap #menu, body.inmap #joy, body.inmap #prompt, body.inmap #sceneMenu{display:none}
-  .wp-head{display:flex;gap:10px;align-items:center} .wp-head .ico{width:40px;height:40px;margin:0} .wp-head b{font-size:16px;display:block} .wp-head small{font-size:12px;opacity:.75}
-  .wp-bar{height:12px;background:#555;border:2px solid #000;margin:8px 0 10px} .wp-bar div{height:100%;background:linear-gradient(90deg,#3fbf5f,#e8c547)}
-  .wp-tabs{display:grid;grid-template-columns:repeat(9,1fr);gap:3px;margin-bottom:10px} .wp-tabs button{padding:4px 0;font-size:13px;line-height:1.1;display:flex;flex-direction:column;align-items:center} .wp-tabs button small{font-size:9px;font-weight:400;opacity:.85} .wp-tabs button.sel{background:#c96a1e} .wp-tabs button.done{color:#ffe08a}
-  .wp-title{font-weight:700;font-size:17px;margin:4px 0} .wp-title small{display:block;font-weight:400;font-size:12px;opacity:.75}
-  .wp-list{display:flex;flex-direction:column;gap:4px;margin:8px 0} .wp-row{display:flex;align-items:center;gap:8px;background:#8b8b8b;color:#fff;text-shadow:1px 1px 0 rgba(0,0,0,.5);padding:6px 8px;border:2px solid;border-color:#373737 #fff #fff #373737;font-size:14px}
-  .wp-row .num{width:24px;height:24px;border-radius:50%;background:#555;display:inline-flex;align-items:center;justify-content:center;font-weight:700} .wp-row .nm{flex:1} .wp-row .st{font-size:12px;opacity:.9}
-  .wp-row.done .num{background:#3fa35a} .wp-row.next{background:#c96a1e} .wp-row.next .num{background:#fff;color:#c96a1e}
-  @media (max-width:700px){ #worldPanel{left:6px;right:6px;top:auto;bottom:64px;width:auto;max-height:48vh;padding:8px} #mapCtl{bottom:8px;left:6px;right:6px;gap:4px;padding:5px;flex-wrap:nowrap} #mapCtl button{flex:1;padding:7px 2px;font-size:13px;white-space:nowrap;min-width:0} #mapCtl small{display:none} }
-  #taskPanel{position:fixed;left:14px;bottom:90px;display:none;z-index:6;background:#c6c6c6;border:3px solid;border-color:#fff #555 #555 #fff;outline:2px solid #000;padding:10px;box-shadow:0 6px 24px rgba(0,0,0,.5);width:min(420px,94vw)}
-  #taskPanel.show{display:block} #modal.show ~ #taskPanel{display:none}
+  #qbar{position:fixed;top:calc(var(--hud-h) + 2px);left:50%;transform:translateX(-50%);width:min(660px,calc(100vw - 16px));padding:10px 14px 12px;z-index:6;display:none}
+  #qbar.show{display:block}
+  #qmeta{font-size:13px;color:var(--sun);font-weight:700;margin:0 84px 3px 0;line-height:1.4}
+  #qtext{font-size:21px;font-weight:800;line-height:1.45}
+  #qtext .ic{color:var(--sun)}
+  #qfig{display:none;width:220px;height:143px;background:#fff;border:3px solid var(--ink);border-radius:10px;margin:8px auto 0}
+  #qbar .msg{margin-top:8px;padding:7px 10px 7px 40px;font-size:15px} #qbar .msg::before{top:8px;width:20px;height:20px}
+  #qQuit{position:absolute;right:8px;top:8px;padding:4px 10px 6px;font-size:12px;--b:rgba(255,255,255,.14);border-width:2px;box-shadow:none;color:#dfe5f5}
+  #qbar.show ~ #sceneMenu, #modal.show ~ #sceneMenu{display:none}
+  #speech{position:fixed;top:calc(var(--hud-h) + 4px);left:50%;transform:translateX(-50%);width:max-content;max-width:min(560px,calc(100vw - 16px));padding:10px 18px 12px;font-size:18px;font-weight:800;display:none;z-index:6;text-align:center}
+  #speech.show{display:block}
+  #speech small{display:block;font-weight:500;font-size:14px;color:#c6cfe6;margin-top:3px;line-height:1.5}
+  .toast{position:fixed;top:calc(var(--hud-h) + 70px);left:50%;transform:translateX(-50%);background:var(--ok);color:#fff;padding:9px 18px 10px;border:3px solid var(--ink);border-radius:999px;font-weight:800;z-index:12;animation:pop 1.6s forwards;pointer-events:none;box-shadow:0 5px 0 var(--ink);white-space:nowrap}
+  @keyframes pop{0%{opacity:0;transform:translate(-50%,10px)}15%{opacity:1;transform:translate(-50%,0)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-14px)}}
+  body.busy #menu, body.busy #sceneMenu, body.busy #prompt{display:none}
+  .fuse{height:14px;background:rgba(0,0,0,.35);border:2px solid var(--ink);border-radius:7px;margin:6px 0;overflow:hidden}
+  #fuseBar{height:100%;background:linear-gradient(90deg,#3fbf5f,#e8c547,#e04848);width:100%;transition:width .1s linear}
+  /* 偷襲作答與蓋房子調色盤 */
+  .amb-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  button.amb{--b:#fff;color:var(--text);text-shadow:none;font-size:19px;font-weight:800;padding:12px 8px 15px;text-align:left;box-shadow:inset 0 -5px 0 var(--line);display:flex;align-items:center;gap:8px}
+  button.amb .n{flex:none;display:inline-flex;align-items:center;justify-content:center;background:var(--sun);color:var(--ink);font-size:14px;width:24px;height:24px;border-radius:6px;border:2px solid var(--ink)}
+  button.amb.right{--b:var(--leaf);color:#fff} button.amb:disabled{color:var(--text);--b:#e9e3d6} button.amb.right:disabled{--b:var(--leaf);color:#fff}
+  .pal{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .pal-b{--b:#efe6d2;color:var(--text);text-shadow:none;display:flex;flex-direction:column;align-items:center;padding:7px 2px 9px;font-size:14px;line-height:1.2;box-shadow:inset 0 -4px 0 var(--line)}
+  .pal-b i{display:block;width:24px;height:24px;border:2px solid var(--ink);border-radius:5px;margin-bottom:3px} .pal-b small{font-size:10px;font-weight:500;color:var(--mute)}
+  .pal-b.sel{--b:var(--sun);box-shadow:inset 0 -4px 0 rgba(0,0,0,.18)} .pal-b.sel small{color:#5b4500}
+  .pal-info{flex:1;align-self:center;font-size:13px;color:#c6cfe6}
+  #taskPanel .row{margin-top:8px}
+  .gatebtns{justify-content:center} .gatebtns button{font-size:20px;padding:14px 22px}
   .tp-coins{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
   button.coin{display:flex;flex-direction:column;align-items:center;padding:8px 4px;font-size:20px;line-height:1.1} button.coin small{font-size:11px;font-weight:400}
-  .coin.c0{background:#c9a227} .coin.c1{background:#9aa0a6} .coin.c2{background:#b5651d} .coin.c3{background:#8a6d3b}
+  .coin.c0{--b:#c9a227} .coin.c1{--b:#9aa0a6} .coin.c2{--b:#b5651d} .coin.c3{--b:#8a6d3b}
   .tp-total{font-size:17px;margin:8px 0 4px;font-weight:700} .tp-total small{display:block;font-weight:400;font-size:13px;opacity:.75}
-  body.busy #menu, body.busy #sceneMenu, body.busy #prompt{display:none}
-  .amb-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px} button.amb{font-size:19px;padding:12px 8px;text-align:left;position:relative} button.amb .n{display:inline-block;background:#373737;color:#fff;font-size:12px;width:18px;height:18px;line-height:18px;text-align:center;margin-right:6px;vertical-align:2px} button.amb.right{background:#6fc46f}
-  .pal{display:grid;grid-template-columns:repeat(4,1fr);gap:5px} .pal-b{display:flex;flex-direction:column;align-items:center;padding:6px 2px;font-size:14px;line-height:1.15} .pal-b i{display:block;width:22px;height:22px;border:2px solid #000;margin-bottom:2px} .pal-b small{font-size:10px;font-weight:400;opacity:.8} .pal-b.sel{outline:3px solid #ffd54a;background:#e8e8e8}
-  .pal-info{flex:1;align-self:center;font-size:13px}
-  .gatebtns{justify-content:center} .gatebtns button{font-size:20px;padding:14px 22px}
-  @media (max-width:700px){ #taskPanel{left:6px;bottom:84px} }
-  .fuse{height:14px;background:#444;border:2px solid #000;margin:6px 0}
-  #fuseBar{height:100%;background:linear-gradient(90deg,#3fbf5f,#e8c547,#e04848);width:100%;transition:width .1s linear}
-  @media (max-width:700px){ #prompt{bottom:auto;top:110px;font-size:15px} #joy{left:14px;bottom:24px} #qfig{width:160px;height:104px} #qbar{padding:6px 10px} #menu,#sceneMenu{left:auto;right:10px;bottom:10px;transform:none;flex-direction:column;align-items:stretch;padding:6px;max-width:56vw} #menu button,#sceneMenu button{font-size:14px;padding:8px 10px;text-align:left} #qbar{top:104px} #qtext{font-size:16px} }
-  #menu button{padding:10px 12px;font-size:15px}
-  #mapCv{display:block;border:2px solid #373737;background:#d7c190;image-rendering:pixelated}
-  #mapRow{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap;font-weight:700}
-  #mapRow span{width:100%}
-  #mapRow button{padding:8px 14px}
-  #aimCv{display:block;border:2px solid #373737;background:#fff;touch-action:none;cursor:grab;image-rendering:pixelated}
-  #aimRow{display:flex;gap:8px;align-items:center;margin-top:8px;font-weight:700}
-  #aimRow input{flex:1;accent-color:#c96a1e}
-  #speech{position:fixed;top:64px;right:14px;max-width:min(520px,60vw);background:#c6c6c6;border:3px solid;border-color:#fff #555 #555 #fff;outline:2px solid #000;padding:10px 16px;font-size:18px;font-weight:700;display:none;z-index:6;box-shadow:0 4px 14px rgba(0,0,0,.4);text-align:center}
-  #speech.show{display:block}
-  @media (max-width:700px){ #speech{left:50%;right:auto;transform:translateX(-50%);max-width:92vw;font-size:15px;padding:6px 10px} #speech small{font-size:12px} }
-  #speech small{display:block;font-weight:400;font-size:14px;opacity:.75;margin-top:2px}
-  .toast{position:fixed;top:120px;left:50%;transform:translateX(-50%);background:var(--ok);color:#fff;text-shadow:2px 2px 0 rgba(0,0,0,.5);padding:8px 16px;border:2px solid #000;font-weight:700;z-index:8;animation:pop 1.6s forwards;pointer-events:none}
-  @keyframes pop{0%{opacity:0;transform:translate(-50%,10px)}15%{opacity:1;transform:translate(-50%,0)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-14px)}}
-  .note{font-size:13px;opacity:.75;margin-top:10px}
-  @media (max-width:600px){ .stem{font-size:17px} button{font-size:15px;padding:10px 12px} #hud .chip{font-size:13px;padding:5px 8px} #aim{left:6px;bottom:84px} #aimCv{width:300px;height:179px} #mapPanel{left:6px;bottom:84px} #mapCv{width:300px;height:205px} }
+  /* 群島地圖 */
+  #worldPanel{position:fixed;left:14px;top:calc(var(--hud-h) + 4px);width:348px;max-height:calc(100vh - var(--hud-h) - 18px);overflow:auto;display:none;z-index:7;padding:14px}
+  #mapCtl{position:fixed;right:14px;bottom:14px;display:none;z-index:7;gap:8px;align-items:center}
+  #mapTip{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);display:none;z-index:6;color:#dfe7fb;font-size:13px;background:rgba(20,26,43,.6);padding:6px 14px;border-radius:999px;white-space:nowrap;pointer-events:none}
+  #mapCtl .iconbtn{width:44px;height:44px;font-size:20px}
+  #mapClose{padding:10px 16px 13px}
+  body.inmap #worldPanel{display:block} body.inmap #mapCtl{display:flex} body.inmap #mapTip{display:block} body.inmap #menu, body.inmap #joy, body.inmap #prompt, body.inmap #sceneMenu{display:none}
+  .logo{--o:.05em;--d:calc(var(--o) * .72);font-family:var(--display);font-weight:400;color:var(--sun);letter-spacing:.1em;line-height:1.1;white-space:nowrap;text-shadow:var(--o) 0 0 var(--ink),calc(var(--o) * -1) 0 0 var(--ink),0 var(--o) 0 var(--ink),0 calc(var(--o) * -1) 0 var(--ink),var(--d) var(--d) 0 var(--ink),calc(var(--d) * -1) calc(var(--d) * -1) 0 var(--ink),var(--d) calc(var(--d) * -1) 0 var(--ink),calc(var(--d) * -1) var(--d) 0 var(--ink),0 calc(var(--o) * 2.6) 0 var(--ink)}
+  .logo em{font-style:normal;color:#7fe36a}
+  .wp-head{display:flex;gap:10px;align-items:center} .wp-head .ico{width:44px;height:44px;margin:0;border:3px solid var(--ink);border-radius:10px;background-color:#f3d2b0}
+  .wp-head .logo{font-size:27px;--o:1.5px;padding-bottom:4px} .wp-head small{display:block;font-size:12px;color:#aeb9d6;margin-top:3px;font-weight:700;letter-spacing:.1em}
+  .wp-prog{display:flex;align-items:center;gap:10px;margin:12px 0 12px;font-size:13px;font-weight:700;color:#dfe7fb} .wp-prog .ico{width:18px;height:18px;margin:0 3px 0 0;vertical-align:-3px} .wp-prog span{white-space:nowrap}
+  .wp-bar{flex:1;height:14px;background:rgba(0,0,0,.4);border:2px solid var(--ink);border-radius:7px;overflow:hidden} .wp-bar div{height:100%;min-width:4px;background:linear-gradient(90deg,#46b94a,#b6e24a);border-radius:4px;box-shadow:inset 0 2px 0 rgba(255,255,255,.3)}
+  .wp-tabs{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;margin-bottom:14px}
+  .wp-tabs button{--b:var(--ink3);padding:5px 0 8px;font-size:15px;font-weight:900;line-height:1.1;display:flex;flex-direction:column;align-items:center;gap:3px;border-width:2px;border-radius:8px;box-shadow:inset 0 -4px 0 rgba(0,0,0,.25)}
+  .wp-tabs .dots{display:flex;gap:1px} .wp-tabs .dots i{width:5px;height:5px;border-radius:1px;background:rgba(255,255,255,.22)} .wp-tabs .dots i.on{background:#7fe36a}
+  .wp-tabs button.sel{--b:var(--sun);color:var(--ink);text-shadow:none} .wp-tabs button.sel .dots i{background:rgba(0,0,0,.2)} .wp-tabs button.sel .dots i.on{background:#2f9432}
+  .wp-tabs button.done:not(.sel){--b:#2f8a44}
+  .wp-eyebrow{font-size:12px;font-weight:800;color:var(--sun);letter-spacing:.12em}
+  .wp-title{font-weight:900;font-size:22px;margin:2px 0 4px;line-height:1.25} .wp-title small{display:block;font-weight:500;font-size:12.5px;color:#aeb9d6;margin-top:4px;line-height:1.5}
+  .wp-list{display:flex;flex-direction:column;gap:5px;margin:12px 0 14px}
+  .wp-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.08);border-radius:10px;padding:7px 10px;font-size:15px;font-weight:700;color:#c9d2ea}
+  .wp-row .num{width:26px;height:26px;border-radius:8px;background:rgba(0,0,0,.35);display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:14px} .wp-row .num .ic{margin:0;width:14px;height:14px} .wp-row .num .ico{margin:0;width:16px;height:16px}
+  .wp-row .nm{flex:1} .wp-row .st{font-size:12px;font-weight:700;opacity:.75}
+  .wp-row.done{color:#fff} .wp-row.done .num{background:var(--ok)} .wp-row.done .st{color:#7fe36a;opacity:1}
+  .wp-row.next{background:rgba(255,138,31,.18);border-color:var(--go);color:#fff} .wp-row.next .num{background:var(--go)} .wp-row.next .st{color:var(--sun);opacity:1}
+  .wp-row.lock{opacity:.6}
+  #worldPanel .row{margin-top:0;flex-wrap:nowrap} #wpGo{flex:1;font-size:18px;padding:13px 12px 16px;display:flex;flex-direction:column;align-items:center;gap:2px} #wpGo small{font-size:12px;font-weight:500;opacity:.92} #wpEnter{padding:13px 12px 16px;align-self:stretch}
+  /* 設定 */
+  .set-list{display:flex;flex-direction:column;gap:8px}
+  .set-row{--b:#fff;color:var(--text);text-shadow:none;display:flex;align-items:center;gap:10px;text-align:left;font-size:17px;padding:13px 14px 16px;box-shadow:inset 0 -5px 0 var(--line)} .set-row b{margin-left:auto;color:var(--mute);font-size:14px} .set-row .ic{font-size:20px;color:var(--ink3)}
+  .set-row.del{color:var(--bad)} .set-row.del .ic{color:var(--bad)}
+  .about{text-align:center;font-size:12.5px;color:var(--mute);margin-top:14px;line-height:1.7}
+  .help-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:4px 0 2px}
+  .help-c{background:#fff;border:3px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14.5px;line-height:1.6} .help-c b{display:flex;align-items:center;gap:6px;font-size:16px;margin-bottom:4px} .help-c b .ico{margin:0}
+  /* 開場畫面 */
+  #splash{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#3fa2ff 0%,#8fd0ff 58%,#6cc24a 58%,#6cc24a 64%,#8a5a33 64%);transition:opacity .5s;text-align:center}
+  #splash.hide{opacity:0;pointer-events:none}
+  #splash .logo{font-size:min(17vw,96px)} .sp-sub{margin-top:18px;font-size:min(5.4vw,24px);font-weight:900;color:#fff;letter-spacing:.3em;text-indent:.3em;text-shadow:0 3px 0 var(--ink),2px 0 0 var(--ink),-2px 0 0 var(--ink),0 -2px 0 var(--ink)}
+  .sp-bar{width:min(60vw,260px);height:18px;margin:26px auto 0;background:rgba(20,26,43,.5);border:3px solid var(--ink);border-radius:9px;overflow:hidden} .sp-bar i{display:block;height:100%;width:0;background:var(--sun);box-shadow:inset 0 3px 0 rgba(255,255,255,.4);animation:load 1.1s ease-out forwards}
+  @keyframes load{to{width:100%}}
+  .sp-in{transform:translateY(-8vh);position:relative;z-index:1}
+  #splash::before,#splash::after{content:"";position:absolute;width:26px;height:26px;background:#fff;opacity:.92;box-shadow:26px 0 #fff,52px 0 #fff,78px 0 #fff,26px -26px #fff,52px -26px #fff,104px 0 #fff}
+  #splash::before{left:8%;top:14%} #splash::after{right:16%;top:30%;transform:scale(.7)}
+  @media (prefers-reduced-motion:reduce){ *{animation-duration:.01s !important;transition-duration:.01s !important} }
+  /* 手機與窄螢幕 */
+  @media (max-width:700px){
+    :root{--hud-h:86px}
+    #hud{flex-wrap:wrap;gap:6px;padding:8px}
+    .chip{height:34px;font-size:14.5px;padding:0 9px} #hearts .ico{width:21px;height:21px} .iconbtn{width:38px;height:34px}
+    .hud-break{display:block;flex-basis:100%;height:0;order:5} .chip.res>span{padding:0 7px;gap:4px}
+    #hearts{order:1} .chip.gold{order:2} .hud-sp{order:3} #musicBtn{order:4} #setBtn{order:4} .chip.res{order:6} #treasureChip{order:7} #gear{order:8}
+    #menu,#sceneMenu{left:8px;right:8px;bottom:8px;transform:none;gap:5px;padding:6px;border-radius:14px;max-width:none}
+    .dock{flex:1;min-width:0;padding:6px 2px 9px;font-size:12px} .dock .ico{width:24px;height:24px} .dock>.ic{width:22px;height:22px} .dock small{font-size:9.5px} .dnum{width:24px;height:24px;font-size:15px}
+    #joy{left:14px;bottom:92px} #prompt{bottom:auto;top:calc(var(--hud-h) + 8px);font-size:15px;padding:7px 16px 8px}
+    #qbar{padding:8px 10px 10px} #qtext{font-size:17.5px} #qfig{width:160px;height:104px} #qmeta{font-size:12px}
+    #speech{font-size:15px;padding:8px 12px 10px} #speech small{font-size:12.5px}
+    #aim,#mapPanel,#taskPanel{left:8px;bottom:8px} #aimCv{width:300px;height:179px} #mapCv{width:300px;height:205px}
+    .card{padding:0 14px 14px;border-radius:14px} .card h2{margin:0 -14px 12px;padding:11px 14px 12px;font-size:19px} .card h2.win{font-size:22px;padding:16px}
+    .stem{font-size:18px} button{font-size:15px;padding:10px 12px 13px} .opts button{font-size:18px}
+    .help-grid{grid-template-columns:1fr}
+    #worldPanel{left:8px;right:8px;top:auto;bottom:8px;width:auto;max-height:54vh;padding:10px 12px 12px}
+    .wp-head .ico{width:34px;height:34px} .wp-head .logo{font-size:22px} .wp-head small{display:none} .wp-prog{margin:8px 0}
+    .wp-tabs{margin-bottom:10px} .wp-title{font-size:19px} .wp-title small{display:none} .wp-list{margin:8px 0 10px;gap:4px} .wp-row{padding:5px 8px;font-size:14px}
+    #wpGo{font-size:16px;padding:10px 8px 13px} #wpEnter{padding:10px 10px 13px}
+    #mapCtl{right:8px;bottom:auto;top:calc(var(--hud-h) + 4px);flex-direction:column;gap:6px} #mapCtl .iconbtn{width:40px;height:40px} #mapClose{width:40px;height:40px;padding:0 0 3px;display:inline-flex;align-items:center;justify-content:center} #mapClose span{display:none} #mapClose .ic{margin:0}
+    #mapTip{display:none !important} #mapZoomIn,#mapZoomOut{display:none}
+    .loot{gap:6px} .loot-i{min-width:56px;flex:1;max-width:76px;padding:8px 2px 6px} .loot-i .ico{width:28px;height:28px} .loot-i b{font-size:17px} .loot-i small{font-size:11px;white-space:nowrap}
+  }
+  @media (max-height:520px){ #worldPanel{max-height:calc(100vh - var(--hud-h) - 12px);top:calc(var(--hud-h) + 2px);bottom:auto;right:auto;width:330px} .wp-title small{display:none} .wp-list{gap:3px;margin:6px 0 8px} .wp-row{padding:3px 8px} #joy{bottom:84px} }
 </style>
 </head>
 <body>
 <canvas id="world"></canvas>
 
 <div id="hud">
-  <div class="chip" id="hearts"></div>
-  <div class="chip"><i class="ico wood"></i>木材 <span id="wood">0</span></div>
-  <div class="chip"><i class="ico shard"></i>角尺碎片 <span id="shard">0</span></div>
-  <div class="chip"><i class="ico stone"></i>石頭 <span id="stone">0</span></div>
-  <div class="chip"><i class="ico glass"></i>玻璃 <span id="glass">0</span></div>
-  <div class="chip" id="gear"><small>裝備：</small><span id="gearTxt">無</span></div>
-  <div class="chip"><i class="ico chest"></i>寶藏 <span id="treasure">0</span></div>
-  <div class="chip"><i class="ico star"></i>星星 <span id="stars">0</span></div>
-  <button class="chip" id="musicBtn">♪ 音樂：開</button>
+  <div class="chip" id="hearts" title="生命"></div>
+  <div class="chip gold" title="星星"><i class="ico star"></i><span id="stars">0</span><small>/ 9</small></div>
+  <div class="hud-break"></div>
+  <div class="chip res">
+    <span title="木材"><i class="ico wood"></i><b id="wood">0</b></span>
+    <span title="角尺碎片"><i class="ico shard"></i><b id="shard">0</b></span>
+    <span title="石頭"><i class="ico stone"></i><b id="stone">0</b></span>
+    <span title="玻璃"><i class="ico glass"></i><b id="glass">0</b></span>
+  </div>
+  <div class="chip none" id="treasureChip" title="寶藏"><i class="ico chest"></i><span id="treasure">0</span></div>
+  <div class="chip none" id="gear" title="裝備"><span id="gearTxt"></span></div>
+  <div class="hud-sp"></div>
+  <button class="iconbtn" id="musicBtn" aria-label="音樂"><i class="ic ic-note"></i></button>
+  <button class="iconbtn" id="setBtn" aria-label="設定" title="設定"><i class="ic ic-gear"></i></button>
 </div>
 
-<div id="speech"></div>
+<div id="speech" class="float"></div>
 
-<div id="aim">
+<div id="aim" class="float">
   <canvas id="aimCv" width="420" height="250"></canvas>
   <div id="aimRow">
     <span>轉弓</span><input type="range" id="aimSlider" min="5" max="175" value="45">
@@ -167,31 +275,33 @@
   </div>
 </div>
 
-<div id="mapPanel">
+<div id="mapPanel" class="float">
   <canvas id="mapCv" width="440" height="300"></canvas>
   <div id="mapRow">
     <span id="mapQ">第 1 個轉角是什麼角？</span>
     <button class="primary" data-t="銳角">銳角</button><button class="primary" data-t="直角">直角</button><button class="primary" data-t="鈍角">鈍角</button>
-    <button class="plain" id="mapHint">💡 提示</button>
+    <button class="plain" id="mapHint"><i class="ic ic-bulb"></i>提示</button>
   </div>
 </div>
 
 <div id="menu">
-  <button class="primary" id="btnPractice"><i class="ico pick"></i>採集（練習題）</button>
-  <button class="blue" id="btnCraft"><i class="ico craft"></i>工作臺</button>
-  <button class="plain" id="btnFight"><i class="ico fox"></i>挑戰迷霧狐狸</button>
-  <button class="plain" id="btnBoss"><i class="ico map"></i>藏寶圖首領關</button>
-  <button class="blue" id="btnUnits"><i class="ico star"></i>群島地圖</button>
+  <button class="dock primary" id="btnPractice"><i class="ico pick"></i><span>採集</span><small>練習題</small></button>
+  <button class="dock blue" id="btnCraft"><i class="ico craft"></i><span>工作臺</span><small>合成裝備</small></button>
+  <button class="dock green" id="btnFight"></button>
+  <button class="dock green" id="btnBoss"></button>
+  <button class="dock plain" id="btnUnits"><i class="ic ic-flag"></i><span>群島地圖</span><small>選單元</small></button>
 </div>
 
 <div id="modal"><div class="card" id="card"></div></div>
-<div id="qbar"><div id="qmeta"></div><div id="qtext"></div><canvas id="qfig" width="400" height="260"></canvas><div id="qmsg"></div><button class="plain" id="qQuit">放棄這一關</button></div>
+<div id="qbar" class="float"><div id="qmeta"></div><div id="qtext"></div><canvas id="qfig" width="400" height="260"></canvas><div id="qmsg"></div><button id="qQuit">放棄這關</button></div>
 <div id="sceneMenu"></div>
-<div id="worldPanel"></div>
-<div id="mapCtl"><button class="plain" id="mapZoomIn">＋</button><button class="plain" id="mapZoomOut">－</button><button class="plain" id="mapReset">重置視角</button><button class="plain" id="mapHelp">操作說明</button><button class="plain" id="mapRestart">重新開始</button><button class="blue" id="mapClose">回營地</button><small>拖曳旋轉 ・ 滾輪或雙指縮放 ・ 點島嶼選擇</small></div>
-<div id="taskPanel"></div>
+<div id="worldPanel" class="float"></div>
+<div id="mapCtl"><button class="iconbtn" id="mapZoomIn" aria-label="放大" title="放大"><i class="ic ic-plus"></i></button><button class="iconbtn" id="mapZoomOut" aria-label="縮小" title="縮小"><i class="ic ic-minus"></i></button><button class="iconbtn" id="mapReset" aria-label="重置視角" title="重置視角"><i class="ic ic-target"></i></button><button class="iconbtn" id="mapHelp" aria-label="怎麼玩" title="怎麼玩"><i class="ic ic-help"></i></button><button class="blue" id="mapClose" title="回營地"><i class="ic ic-home"></i><span>回營地</span></button></div>
+<div id="mapTip">拖曳旋轉 ・ 滾輪或雙指縮放 ・ 點島嶼選單元</div>
+<div id="taskPanel" class="float"></div>
 <div id="prompt"></div>
 <div id="joy"><div id="knob"></div></div>
+<div id="splash"><div class="sp-in"><div class="logo">方塊<em>學園</em></div><div class="sp-sub">三上數學冒險</div><div class="sp-bar"><i></i></div></div></div>
 
 <script>
 /* ============================================================
@@ -266,9 +376,9 @@ const music = (() => {
   function start() { if (started || !on) return; started = true; try { ensureCtx(); if (useAudio) decodeAll().then(() => { if (started && on && !cur) playTrack(); }).catch(() => { useAudio = false; if (started && on) startSynth(); }); else startSynth(); } catch (e) {} }
   function stop() { started = false; stopTrack(); stopSynth(); }
   function setTheme(t) { if (t === theme) return; theme = t; if (!started) return; if (useAudio) { if (buffers[t]) playTrack(); } else { stopSynth(); startSynth(); } }
-  function ui() { const b = $('#musicBtn'); if (b) b.textContent = on ? '♪ 音樂：開' : '♪ 音樂：關'; }
+  function ui() { const b = $('#musicBtn'); if (b) { b.classList.toggle('off', !on); b.title = on ? '音樂：開（點一下關閉）' : '音樂：關（點一下開啟）'; b.setAttribute('aria-label', b.title); } }
   function toggle() { on = !on; try { localStorage.setItem('u5music', on ? 'on' : 'off'); } catch (e) {} if (on) start(); else stop(); ui(); }
-  return { start, stop, setTheme, toggle, ui, get mode() { return useAudio ? 'audio' : 'synth'; } };
+  return { start, stop, setTheme, toggle, ui, get on() { return on; }, get mode() { return useAudio ? 'audio' : 'synth'; } };
 })();
 // 瀏覽器規定要先有點擊才能出聲：第一次點擊任何地方就開始播
 ['click', 'touchend'].forEach(ev => document.addEventListener(ev, () => music.start(), { passive: true }));
@@ -288,11 +398,12 @@ load();
 function hud() {
   $('#hearts').innerHTML = Array.from({ length: 3 }, (_, i) => `<i class="ico ${i < S.hp ? 'heart' : 'heart0'}"></i>`).join('');
   $('#wood').textContent = S.wood; $('#shard').textContent = S.shard; $('#stone').textContent = S.stone || 0; $('#glass').textContent = S.glass || 0;
-  const g = [['bow', '木弓'], ['square', '角尺'], ['paper', '描圖紙']].filter(([k]) => S.gear[k]).map(([k, n]) => `<i class="ico ${k}"></i>${n}`);
-  $('#gearTxt').innerHTML = g.length ? g.join(' ') : '無';
-  $('#btnFight').innerHTML = '<i class="ico fox"></i>' + (S.gear.bow ? '挑戰迷霧狐狸' : '挑戰狐狸（先合成木弓）');
-  $('#treasure').textContent = S.treasures; $('#stars').textContent = Object.values(S.units || {}).filter(x => x.star).length;
-  $('#btnBoss').innerHTML = '<i class="ico map"></i>' + (S.wins ? '藏寶圖首領關' : '藏寶圖（先打贏狐狸）');
+  const g = [['bow', '木弓'], ['square', '角尺'], ['paper', '描圖紙']].filter(([k]) => S.gear[k]).map(([k, n]) => `<i class="ico ${k}" title="${n}"></i>`);
+  $('#gearTxt').innerHTML = g.join(''); $('#gear').classList.toggle('none', !g.length);
+  const LOCK = '<span class="badge"><i class="ic ic-lock"></i></span>';
+  $('#btnFight').innerHTML = '<i class="ico fox"></i><span>挑戰狐狸</span>' + (S.gear.bow ? '<small>射出指定的角</small>' : '<small>先合成木弓</small>' + LOCK); $('#btnFight').classList.toggle('locked', !S.gear.bow);
+  $('#treasure').textContent = S.treasures; $('#treasureChip').classList.toggle('none', !S.treasures); $('#stars').textContent = Object.values(S.units || {}).filter(x => x.star).length;
+  $('#btnBoss').innerHTML = '<i class="ico map"></i><span>藏寶圖</span>' + (S.wins ? '<small>首領關</small>' : '<small>先打贏狐狸</small>' + LOCK); $('#btnBoss').classList.toggle('locked', !S.wins);
   save();
 }
 
@@ -426,7 +537,7 @@ const RECIPES = [
 function openCraft() {
   S.mode = 'craft';
   openModal(`<h2><i class="ico craft"></i>工作臺</h2>
-    ${RECIPES.map(r => { const can = Object.entries(r.need).every(([k, v]) => S[k] >= v); return `<div class="recipe"><div><div class="name">${r.name} ${S.gear[r.key] ? '<span class="owned">✔ 已擁有</span>' : ''}</div><div class="need">${Object.entries(r.need).map(([k, v]) => `<span class="mat ${k}"></span>${k === 'wood' ? '木材' : '碎片'} × ${v}（有 ${S[k]}）`).join('　')}<br>${r.use}</div></div>
+    ${RECIPES.map(r => { const can = Object.entries(r.need).every(([k, v]) => S[k] >= v); return `<div class="recipe"><div><div class="name">${r.name} ${S.gear[r.key] ? '<span class="owned"><i class="ic ic-check"></i>已擁有</span>' : ''}</div><div class="need">${Object.entries(r.need).map(([k, v]) => `<span class="mat ${k}"></span>${k === 'wood' ? '木材' : '碎片'} × ${v}（有 ${S[k]}）`).join('　')}<br>${r.use}</div></div>
       <button class="${can ? 'primary' : 'plain'}" data-k="${r.key}" ${S.gear[r.key] || !can ? 'disabled' : ''}>${S.gear[r.key] ? '完成' : can ? '合成' : '材料不足'}</button></div>`; }).join('')}
     <div class="note">材料不足時，去採集點完成練習題就能取得。提示永遠免費，不會被鎖在寶物後面。</div>
     <div class="row"><button class="blue" id="goPractice"><i class="ico pick"></i>去採集</button><button class="plain" id="backBtn">回營地</button></div>`);
@@ -462,15 +573,15 @@ function nextRound() {
 function quizRound() {
   $('#aim').classList.remove('show');
   const q = T[1].make(); window.__quiz = q; // T2 比大小（__quiz 供測試用）
-  openModal(`<h2><i class="ico fox"></i>狐狸出題 <span>答對可以反擊</span></h2><div class="stem">${q.stem}</div><canvas class="fig" id="fig" width="400" height="260"></canvas><div class="opts" id="opts">${q.opts.map(o => `<button data-v="${o}">${o}</button>`).join('')}</div><div id="msg"></div><div class="row"><button class="plain" id="hintBtn">💡 提示</button></div>`);
+  openModal(`<h2><i class="ico fox"></i>狐狸出題 <span>答對可以反擊</span></h2><div class="stem">${q.stem}</div><canvas class="fig" id="fig" width="400" height="260"></canvas><div class="opts" id="opts">${q.opts.map(o => `<button data-v="${o}">${o}</button>`).join('')}</div><div id="msg"></div><div class="row"><button class="plain" id="hintBtn"><i class="ic ic-bulb"></i>提示</button></div>`);
   q.draw($('#fig').getContext('2d'));
   let tries = 0;
-  $('#hintBtn').onclick = () => $('#msg').innerHTML = `<div class="msg hint">💡 ${q.hint}</div>`;
+  $('#hintBtn').onclick = () => $('#msg').innerHTML = `<div class="msg hint">${q.hint}</div>`;
   $('#opts').querySelectorAll('button').forEach(b => b.onclick = () => {
     tries++;
-    if (b.dataset.v === q.ans) { b.classList.add('ok'); sfx.hit(); B.foxHp--; world.foxHit(); $('#msg').innerHTML = `<div class="msg ok">✔ ${q.exp} 狐狸的迷霧少了一層！</div><div class="row"><button class="primary" id="n">繼續 ▶</button></div>`; $('#n').onclick = () => { closeModal(); nextRound(); }; }
+    if (b.dataset.v === q.ans) { b.classList.add('ok'); sfx.hit(); B.foxHp--; world.foxHit(); $('#msg').innerHTML = `<div class="msg ok">${q.exp} 狐狸的迷霧少了一層！</div><div class="row"><button class="primary" id="n">繼續<i class="ic ic-next r"></i></button></div>`; $('#n').onclick = () => { closeModal(); nextRound(); }; }
     else if (tries === 1) { b.classList.add('bad'); sfx.bad(); $('#msg').innerHTML = `<div class="msg bad">差一點！${q.hint} 再試一次。</div>`; }
-    else { b.classList.add('bad'); sfx.bad(); S.hp--; hud(); world.playerHit(); $('#msg').innerHTML = `<div class="msg bad">正確答案是「${q.ans}」。${q.exp}<br>狐狸趁機偷襲，你少了一顆心。</div><div class="row"><button class="primary" id="n">繼續 ▶</button></div>`; $('#n').onclick = () => { closeModal(); nextRound(); }; }
+    else { b.classList.add('bad'); sfx.bad(); S.hp--; hud(); world.playerHit(); $('#msg').innerHTML = `<div class="msg bad">正確答案是「${q.ans}」。${q.exp}<br>狐狸趁機偷襲，你少了一顆心。</div><div class="row"><button class="primary" id="n">繼續<i class="ic ic-next r"></i></button></div>`; $('#n').onclick = () => { closeModal(); nextRound(); }; }
   });
 }
 // 瞄準畫面
@@ -515,7 +626,7 @@ $('#shootBtn').onclick = () => {
 function winFight() {
   music.setTheme('camp');
   $('#aim').classList.remove('show'); $('#speech').classList.remove('show'); S.wins++; S.wood += 4; S.shard += 4; hud(); world.setFight(false); world.foxFriendly();
-  openModal(`<h2>🎉 迷霧散了！</h2><div class="stem">狐狸變回友善生物，送你木材 4 個、角尺碎片 4 個。<br>你已經打贏 ${S.wins} 次。</div>
+  openModal(`<h2 class="win">迷霧散了！</h2>${loot({ wood: 4, shard: 4 })}<div class="stem center">狐狸變回友善生物。你已經打贏 ${S.wins} 次。</div>
     <div class="note">狐狸交出了一張藏寶圖。回營地按「藏寶圖首領關」，沿路線說出每個轉角是什麼角，就能打開寶箱。</div>
     <div class="row"><button class="primary" id="backBtn">回營地</button></div>`);
   $('#backBtn').onclick = () => { closeModal(); S.mode = 'camp'; };
@@ -619,6 +730,9 @@ const PIX = (() => {
   return { cv, tiles, tex, uvMap, draw, icon };
 })();
 // 介面圖示：直接用貼圖集產生
+// 介面用的單色點陣圖示：用遮罩上色，顏色跟著文字走
+const UI_ICONS = {"lock": "...#####.....##...##....##...##....##...##...#########..#########..####.####..####.####..#########..#########............", "check": "....................##........###.......###.##....###..###..###....######......####........##............................", "cross": "............##.....##..###...###...###.###.....#####.......###.......#####.....###.###...###...###..##.....##............", "bulb": "...#####.....#######...#########..#########..#########...#######.....#####.......###...................###........###....", "gear": "....###.....#..###..#..#########...#######..####...########...########...####..#######...#########..#..###..#.....###....", "note": "....#######....#######....#.....#....#.....#....#.....#....#.....#..###...###.####..####.####..####..##....##............", "home": ".....#.........###.......#####.....#######...#########.###########.#########..###...###..###...###..###...###............", "skull": "..#######...#########..#########..##..#..##..##..#..##..#########...###.###....#######....#.#.#.#....#.#.#.#.............", "plus": "...............###........###........###.....#########..#########..#########.....###........###........###...............", "minus": ".............................................#########..#########..#########.............................................", "target": ".....#..........#........#####.....#.....#....#..#..#..###.###.###..#..#..#....#.....#.....#####........#..........#.....", "help": "...#####.....#######....##...##.........##........###.......###.......###........##....................##.........##.....", "next": ".............##.........####.......######.....########...#########..########...######.....####.......##..................", "warn": ".....#.........###........###.......##.##......##.##.....###.###....###.###...#########..####.####.###########...........", "flag": "..#..........#######....########...#########..########...#######....#..........#..........#.........###.......#####......"};
+(function () { let css = ''; Object.entries(UI_ICONS).forEach(([k, bits]) => { let r = ''; for (let i = 0; i < 121; i++) if (bits[i] === '#') r += `<rect x='${i % 11}' y='${Math.floor(i / 11)}' width='1.03' height='1.03'/>`; const url = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 11' shape-rendering='crispEdges'>${r}</svg>`)}")`; document.documentElement.style.setProperty('--ic-' + k, url); css += `.ic-${k}{-webkit-mask-image:var(--ic-${k});mask-image:var(--ic-${k})}`; }); const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st); })();
 ['wood:log_side', 'stone:cobble', 'glass:glass', 'shard:icon_shard', 'pick:icon_pick', 'craft:craft_side', 'fox:icon_fox', 'bow:icon_bow', 'square:icon_square', 'paper:icon_paper', 'heart:heart', 'heart0:heart0', 'chest:icon_chest', 'map:icon_map', 'star:icon_star', 'face:face'].forEach(p => { const [k, n] = p.split(':'); document.documentElement.style.setProperty('--ico-' + k, `url(${PIX.icon(n)})`); });
 
 // ============================================================
@@ -908,7 +1022,7 @@ const world = (() => {
   // 骷髏射手：細手細腳、拿弓
   function makeSkeleton() { const g = new THREE.Group(); block({ side: 'bone', pz: 'skull_face', py: 'bone' }, 0, 1.75, 0, g, .5, .5, .5); block('bone', 0, 1.125, 0, g, .5, .75, .25); [[-.3, -.4], [.3, .3]].forEach(([x, rx]) => { const a = new THREE.Group(); a.position.set(x, 1.5, 0); block('bone', 0, -.375, 0, a, .125, .75, .125); a.rotation.x = -Math.PI / 2 + .1; a.rotation.y = rx; g.add(a); }); const bow = new THREE.Group(); block('log_side', 0, .25, 0, bow, .08, .5, .08); const b1 = block('log_side', .02, .55, 0, bow, .08, .35, .08); b1.rotation.z = .5; const b2 = block('log_side', .02, -.05, 0, bow, .08, .35, .08); b2.rotation.z = -.5; block('fur_white', -.12, .25, 0, bow, .02, .9, .02); bow.position.set(.05, 1.3, .75); g.add(bow); const lL = new THREE.Group(), lR = new THREE.Group(); lL.position.set(-.125, .75, 0); lR.position.set(.125, .75, 0); [lL, lR].forEach(l => { block('bone', 0, -.375, 0, l, .125, .75, .125); g.add(l); }); const lab = makeLabel(''); lab.position.set(0, 2.7, 0); g.add(lab); g.visible = false; scene.add(g); return { g, lab, lL, lR, state: 0, speed: 1, t: 0, frozen: 0 }; }
   const zombiePool = [makeZombie(), makeZombie(), makeZombie(), makeZombie()], skeletonPool = [makeSkeleton(), makeSkeleton(), makeSkeleton(), makeSkeleton()]; let zombies = zombiePool, onZombieTap = null, onZombieReach = null;
-  function defendSpawn(labels, speed, big) { const px = player.position.x, pz = player.position.z; defendClear(); zombies = (sceneU && SCENE_CFG[sceneU].mob === 'skeleton') ? skeletonPool : zombiePool; labels.forEach((lb, i) => { const zb = zombies[i], a = -Math.PI / 2 + .9 + i * (Math.PI * 2 / labels.length); /* 錯開正上方，免得被題目欄擋住 */ const x = Math.max(-17, Math.min(17, px + Math.cos(a) * 9.5)), z = Math.max(-17, Math.min(17, pz + Math.sin(a) * 9.5)); zb.g.position.set(x, curHgt(Math.round(x), Math.round(z)), z); zb.g.scale.setScalar(big ? 1.5 : 1); zb.g.rotation.set(0, 0, 0); zb.g.lookAt(px, zb.g.position.y, pz); zb.g.visible = true; zb.state = 1; zb.speed = speed; zb.t = 0; zb.frozen = performance.now() + 3000; setLabel(zb.lab, lb, '#fff', undefined, String(i + 1)); }); for (let i = labels.length; i < 4; i++) zombies[i].g.visible = false; }
+  function defendSpawn(labels, speed, big) { const px = player.position.x, pz = player.position.z; defendClear(); const pc = camera.clone(), ct = new THREE.Vector3(px, player.position.y + .5, pz); pc.position.set(px, player.position.y + 15.5, pz + 10.5); if (portrait) pc.position.sub(ct).multiplyScalar(1.35).add(ct); pc.lookAt(ct); pc.updateMatrixWorld(true); pc.matrixWorldInverse.copy(pc.matrixWorld).invert(); const fits = (x, z) => { const v = new THREE.Vector3(x, player.position.y + 3, z).project(pc); return Math.abs(v.x) < lim && v.y < .5 && v.y > -.72; }; let lim = .82; zombies = (sceneU && SCENE_CFG[sceneU].mob === 'skeleton') ? skeletonPool : zombiePool; labels.forEach((lb, i) => { const zb = zombies[i], a = -Math.PI / 2 + .9 + i * (Math.PI * 2 / labels.length); /* 錯開正上方，免得被題目欄擋住 */ lim = portrait ? Math.max(.32, .78 - String(lb).length * .05) : .82; let r = 9.5; while (r > 4.5 && !fits(px + Math.cos(a) * r, pz + Math.sin(a) * r)) r -= .5; const x = Math.max(-17, Math.min(17, px + Math.cos(a) * r)), z = Math.max(-17, Math.min(17, pz + Math.sin(a) * r)); zb.g.position.set(x, curHgt(Math.round(x), Math.round(z)), z); zb.r = r; zb.ls = zb.ls || zb.lab.scale.clone(); zb.lab.scale.copy(zb.ls).multiplyScalar(portrait ? 1.3 : 1.1); /* 直向手機鏡頭較遠，答案牌放大 */ zb.g.scale.setScalar(big ? 1.5 : 1); zb.g.rotation.set(0, 0, 0); zb.g.lookAt(px, zb.g.position.y, pz); zb.g.visible = true; zb.state = 1; zb.speed = speed * zb.r / 9.5; /* 站得近的走慢一點，抵達時間一樣 */ zb.t = 0; zb.frozen = performance.now() + 3000; setLabel(zb.lab, lb, '#fff', undefined, String(i + 1)); }); for (let i = labels.length; i < 4; i++) zombies[i].g.visible = false; }
   function defendShoot(i, ok, cb) { const zb = zombies[i]; player.lookAt(zb.g.position.x, player.position.y, zb.g.position.z); const start = player.position.clone().add(new THREE.Vector3(0, 1.4, 0)), end = zb.g.position.clone().add(new THREE.Vector3(0, 1.2, 0)); arrow.position.copy(start); arrow.visible = true; zombies.forEach(z => z.frozen = performance.now() + 2000); const t0 = performance.now(), dur = 350; anim = () => { const k = Math.min(1, (performance.now() - t0) / dur), p = start.clone().lerp(end, k); p.y += Math.sin(k * Math.PI) * .8; arrow.lookAt(p); arrow.position.copy(p); if (k >= 1) { arrow.visible = false; anim = null; } }; setTimeout(() => { arrow.visible = false; anim = null; if (ok) { zb.state = 2; zb.t = 0; zombies.forEach((o, j) => { if (j !== i && o.state === 1) { o.state = 3; o.t = 0; } }); } cb && cb(); }, dur + 50); }
   function defendClear() { zombiePool.concat(skeletonPool).forEach(z => { z.g.visible = false; z.state = 0; }); }
   function tapZombie(i) { if (zombies[i] && zombies[i].state === 1 && onZombieTap) onZombieTap(i); }
@@ -1269,7 +1383,7 @@ function answerBoss(type) {
 function winBoss() {
   music.setTheme('camp');
   $('#mapPanel').classList.remove('show'); $('#speech').classList.remove('show'); S.treasures++; getU(5).star = true; S.wood += 6; S.shard += 6; hud(); world.chestOpen();
-  openModal(`<h2>🎉 找到寶藏了！</h2><div class="stem">寶箱裡有木材 6 個、角尺碎片 6 個，還有一張新的藏寶圖。<br>你已經找到 ${S.treasures} 個寶藏，下一張藏寶圖的轉角會更多。</div>
+  openModal(`<h2 class="win">找到寶藏了！</h2>${loot({ wood: 6, shard: 6 })}<div class="stem center">寶箱裡還有一張新的藏寶圖。你已經找到 ${S.treasures} 個寶藏，下一張的轉角會更多。</div>
     <div class="row"><button class="primary" id="backBtn">回營地</button></div>`);
   $('#backBtn').onclick = () => { closeModal(); S.mode = 'camp'; world.setBoss(false); };
 }
@@ -1445,7 +1559,10 @@ function showCorrect(q) { if (q.opts) $('#opts').querySelectorAll('button').forE
 function makeQuestion(unitNo = 5, hard = false) { const bag = []; UNITS[unitNo].T.forEach(t => { for (let i = 0; i < t.w; i++) bag.push(t); }); const t = pick(bag); const q = t.make(hard); q.concept = t.concept; q.tid = t.id; if (!q.reward) q.reward = R2(); return q; }
 
 // ---------- 練習（採集）流程：5 題一組，獎勵規則來自設計文件 ----------
-function openModal(html) { $('#card').innerHTML = html; $('#modal').classList.add('show'); }
+function confetti() { const c = document.createElement('div'); c.className = 'confetti'; const col = ['#ffd23f', '#ff8a1f', '#46b94a', '#3b8cff', '#e5484d', '#ffffff']; for (let i = 0; i < 40; i++) { const e = document.createElement('i'); e.style.left = Math.random() * 100 + '%'; e.style.background = col[i % col.length]; e.style.animationDuration = 1.5 + Math.random() * 1.5 + 's'; e.style.animationDelay = Math.random() * .5 + 's'; c.appendChild(e); } document.body.appendChild(c); setTimeout(() => c.remove(), 3800); }
+const LOOT_NAME = { star: '星星', wood: '木材', shard: '角尺碎片', stone: '石頭', glass: '玻璃' };
+function loot(o) { return `<div class="loot">${Object.entries(o).filter(([, v]) => v).map(([k, v], i) => `<div class="loot-i ${k === 'star' ? 'gold' : ''}" style="animation-delay:${i * 90}ms"><i class="ico ${k}"></i><b>+${v}</b><small>${LOOT_NAME[k]}</small></div>`).join('')}</div>`; }
+function openModal(html) { const c = $('#card'); c.innerHTML = html; c.scrollTop = 0; c.style.animation = 'none'; void c.offsetWidth; c.style.animation = ''; $('#modal').classList.add('show'); if (c.querySelector('h2.win')) confetti(); }
 function closeModal() { $('#modal').classList.remove('show'); }
 const getU = u => S.units[u] || (S.units[u] = { sets: 0, star: false });
 function startPractice(unitNo = 5) {
@@ -1458,15 +1575,15 @@ function nextPractice(set) {
   const U = UNITS[set.unit], q = makeQuestion(set.unit, false); set.i++; window.__q = q;
   let hintUsed = false, tries = 0, done = false;
   openModal(`
-    <h2><i class="ico pick"></i>採集點 <span>第 ${U.n} 單元 ${U.name} ・ 第 ${set.i} / ${set.total} 題 ・ ${q.concept}</span></h2>
+    <h2><i class="ico pick"></i>採集點 <span>第 ${U.n} 單元 ${U.name} ・ ${String(q.concept).replace(/^U\d+-C\d+(\/C\d+)*\s*/, '')}</span><div class="pips" title="第 ${set.i} / ${set.total} 題">${Array.from({ length: set.total }, (_, k) => `<i class="${k < set.i - 1 ? 'done' : k === set.i - 1 ? 'cur' : ''}"></i>`).join('')}</div></h2>
     <div class="stem">${q.stem}</div>
     ${q.draw ? '<canvas class="fig" id="fig" width="400" height="260"></canvas>' : ''}
     ${answerUI(q)}
     <div id="msg"></div>
-    <div class="row"><button class="plain" id="hintBtn">💡 提示（免費）</button><button class="ghost" id="quitBtn">離開</button></div>
+    <div class="row"><button class="plain" id="hintBtn"><i class="ic ic-bulb"></i>提示</button><button class="ghost" id="quitBtn">離開</button></div>
   `);
   if (q.draw) q.draw($('#fig').getContext('2d'));
-  $('#hintBtn').onclick = () => { hintUsed = true; $('#msg').innerHTML = `<div class="msg hint">💡 ${q.hint}</div>`; };
+  $('#hintBtn').onclick = () => { hintUsed = true; $('#msg').innerHTML = `<div class="msg hint">${q.hint}</div>`; };
   $('#quitBtn').onclick = () => { closeModal(); S.mode = 'camp'; };
   bindAnswer(q, (v, b) => {
     if (done) return; tries++;
@@ -1475,18 +1592,18 @@ function nextPractice(set) {
       const amt = tries === 1 && !hintUsed ? 3 : 2;      // 首次答對 3，提示後或修正後 2
       set.gained[q.reward] += amt; S[q.reward] += amt;
       S.concept[q.concept] = (S.concept[q.concept] || 0) + (tries === 1 ? 1 : 0);
-      $('#msg').innerHTML = `<div class="msg ok">✔ 答對了！${q.exp}<br>獲得 ${amt} 個${q.reward === 'wood' ? '木材' : '角尺碎片'}${amt === 2 ? '（用了提示或修正）' : ''}</div><div class="row"><button class="primary" id="nextBtn">下一題 ▶</button></div>`;
+      $('#msg').innerHTML = `<div class="msg ok">答對了！${q.exp}<br>獲得 ${amt} 個${q.reward === 'wood' ? '木材' : '角尺碎片'}${amt === 2 ? '（用了提示或修正）' : ''}</div><div class="row"><button class="primary" id="nextBtn">下一題<i class="ic ic-next r"></i></button></div>`;
       $('#nextBtn').onclick = () => nextPractice(set); hud();
     } else {
       markAnswer(q, false, b); sfx.bad();
       if (tries === 1) $('#msg').innerHTML = `<div class="msg bad">差一點點！${q.hint}<br>再試一次。</div>`;
-      else { done = true; showCorrect(q); $('#msg').innerHTML = `<div class="msg bad">正確答案是「${ansText(q)}」。${q.exp}<br>這題先不發材料，下一題再加油。</div><div class="row"><button class="primary" id="nextBtn">下一題 ▶</button></div>`; $('#nextBtn').onclick = () => nextPractice(set); }
+      else { done = true; showCorrect(q); $('#msg').innerHTML = `<div class="msg bad">正確答案是「${ansText(q)}」。${q.exp}<br>這題先不發材料，下一題再加油。</div><div class="row"><button class="primary" id="nextBtn">下一題<i class="ic ic-next r"></i></button></div>`; $('#nextBtn').onclick = () => nextPractice(set); }
     }
   });
 }
 function finishPractice(set) {
   S.wood += 2; S.shard += 1; S.stone += 1; getU(set.unit).sets++; hud(); sfx.craft();   // 完成整組的額外獎勵
-  openModal(`<h2>🎉 完成一組採集！</h2><div class="stem">這一組獲得：<span class="mat wood"></span>木材 ${set.gained.wood} 個、<span class="mat shard"></span>角尺碎片 ${set.gained.shard} 個<br>完成獎勵：再加木材 2 個、碎片 1 個</div>
+  openModal(`<h2 class="win">完成一組採集！</h2>${loot({ wood: set.gained.wood + 2, shard: set.gained.shard + 1, stone: 1 })}<div class="stem center">已經包含完成整組的額外獎勵。</div>
     ${set.unit !== 5 && getU(set.unit).sets === 1 ? `<div class="msg ok">第 ${set.unit} 單元的場景「${SCENES[set.unit].name}」在營地的站點，走過去就能進入闖關。</div>` : ''}
     <div class="row"><button class="primary" id="againBtn">再採一組</button><button class="blue" id="craftBtn">去工作臺</button><button class="plain" id="backBtn">回營地</button></div>`);
   $('#againBtn').onclick = () => startPractice(set.unit); $('#craftBtn').onclick = openCraft; $('#backBtn').onclick = () => { closeModal(); S.mode = 'camp'; };
@@ -1503,30 +1620,30 @@ function startUnitBoss(u) {
 function unitBossRound() {
   if (UB.hp <= 0) return UB.onWin ? UB.onWin() : winUnitBoss(); if (S.hp <= 0) return UB.onLose ? UB.onLose() : loseUnitBoss();
   UB.round++; if (BOSS_GAMES[UB.u]) { bossDone = false; window.__boss = null; return BOSS_GAMES[UB.u](); } const U = UNITS[UB.u], q = makeQuestion(UB.u, true); let done = false; window.__q = q;
-  openModal(`<h2>${U.guard}出題 <span>第 ${UB.round} 題 ・ 守衛還有 ${UB.hp} 滴血，你有 ${S.hp} 顆心</span></h2><div class="stem">${q.stem}</div>${q.draw ? '<canvas class="fig" id="fig" width="400" height="260"></canvas>' : ''}${answerUI(q)}<div id="msg"></div><div class="row"><button class="plain" id="hintBtn">💡 提示</button></div>`);
+  openModal(`<h2>${U.guard}出題 <span>第 ${UB.round} 題 ・ 守衛還有 ${UB.hp} 滴血，你有 ${S.hp} 顆心</span></h2><div class="stem">${q.stem}</div>${q.draw ? '<canvas class="fig" id="fig" width="400" height="260"></canvas>' : ''}${answerUI(q)}<div id="msg"></div><div class="row"><button class="plain" id="hintBtn"><i class="ic ic-bulb"></i>提示</button></div>`);
   if (q.draw) q.draw($('#fig').getContext('2d'));
-  $('#hintBtn').onclick = () => $('#msg').innerHTML = `<div class="msg hint">💡 ${q.hint}</div>`;
+  $('#hintBtn').onclick = () => $('#msg').innerHTML = `<div class="msg hint">${q.hint}</div>`;
   bindAnswer(q, (v, b) => {
     if (done) return; done = true;
-    if (isCorrect(q, v)) { markAnswer(q, true, b); sfx.hit(); UB.hp--; world.unitBossHit(); $('#msg').innerHTML = `<div class="msg ok">✔ ${q.exp} 守衛受傷了！</div><div class="row"><button class="primary" id="n">繼續 ▶</button></div>`; }
-    else { markAnswer(q, false, b); showCorrect(q); sfx.bad(); S.hp--; hud(); world.playerHit(); $('#msg').innerHTML = `<div class="msg bad">正確答案是「${ansText(q)}」。${q.exp}<br>守衛攻擊了你，少了一顆心。</div><div class="row"><button class="primary" id="n">繼續 ▶</button></div>`; }
+    if (isCorrect(q, v)) { markAnswer(q, true, b); sfx.hit(); UB.hp--; world.unitBossHit(); $('#msg').innerHTML = `<div class="msg ok">${q.exp} 守衛受傷了！</div><div class="row"><button class="primary" id="n">繼續<i class="ic ic-next r"></i></button></div>`; }
+    else { markAnswer(q, false, b); showCorrect(q); sfx.bad(); S.hp--; hud(); world.playerHit(); $('#msg').innerHTML = `<div class="msg bad">正確答案是「${ansText(q)}」。${q.exp}<br>守衛攻擊了你，少了一顆心。</div><div class="row"><button class="primary" id="n">繼續<i class="ic ic-next r"></i></button></div>`; }
     $('#n').onclick = () => { closeModal(); setTimeout(unitBossRound, 400); };
   });
 }
 function winUnitBoss() {
   const u = UB.u; $('#speech').classList.remove('show'); const first = !getU(u).star; getU(u).star = true; S.wood += 5; S.shard += 5; hud(); world.setUnitBoss(u, false); music.setTheme('camp');
-  openModal(`<h2>🎉 打倒${UNITS[u].guard}！</h2><div class="stem">${first ? `拿到第 ${u} 單元的星星 ⭐，` : '再次獲勝，'}獎勵木材 5 個、角尺碎片 5 個。<br>你已經收集 ${Object.values(S.units).filter(x => x.star).length} 顆星星。</div><div class="row"><button class="primary" id="backBtn">回營地</button></div>`);
+  openModal(`<h2 class="win">打倒${UNITS[u].guard}！</h2>${loot({ star: first ? 1 : 0, wood: 5, shard: 5 })}<div class="stem center">${first ? `拿到第 ${u} 單元的星星。` : '再次獲勝。'}你已經收集 ${Object.values(S.units).filter(x => x.star).length} 顆星星。</div><div class="row"><button class="primary" id="backBtn">回營地</button></div>`);
   $('#backBtn').onclick = () => { closeModal(); S.mode = 'camp'; };
 }
 function loseUnitBoss() {
   const u = UB.u; $('#speech').classList.remove('show'); world.setUnitBoss(u, false); S.hp = 3; hud(); music.setTheme('camp');
-  openModal(`<h2>被守衛趕走了</h2><div class="stem">材料都還在。回第 ${u} 單元的採集點多練幾組，再來挑戰「${UNITS[u].guard}」。</div><div class="row"><button class="blue" id="p"><i class="ico pick"></i>去採集</button><button class="plain" id="backBtn">回營地</button></div>`);
+  openModal(`<h2 class="lose">被守衛趕走了</h2><div class="stem">材料都還在。回第 ${u} 單元的採集點多練幾組，再來挑戰「${UNITS[u].guard}」。</div><div class="row"><button class="blue" id="p"><i class="ico pick"></i>去採集</button><button class="plain" id="backBtn">回營地</button></div>`);
   $('#p').onclick = () => startPractice(u); $('#backBtn').onclick = () => { closeModal(); S.mode = 'camp'; };
 }
 // 單元地圖：列出九個單元，可直接傳送
 function openUnitMap() {
   openModal(`<h2><i class="ico map"></i>單元地圖 <span>三上數學九個單元</span></h2>
-    ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(u => { const U = UNITS[u], g = getU(u); return `<div class="recipe"><div><div class="name">第 ${u} 單元 ${U.name} ${g.star ? '⭐' : ''}</div><div class="need">${U.concepts.join('、')}${u === 5 ? '（營地：礦石堆、弓箭塔、寶箱）' : ''}${g.sets ? ` ・ 已採集 ${g.sets} 組` : ''}</div></div><button class="blue" data-u="${u}">前往</button></div>`; }).join('')}
+    ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(u => { const U = UNITS[u], g = getU(u); return `<div class="recipe"><div><div class="name">第 ${u} 單元 ${U.name} ${g.star ? '<i class="ico star"></i>' : ''}</div><div class="need">${U.concepts.join('、')}${u === 5 ? '（營地：礦石堆、弓箭塔、寶箱）' : ''}${g.sets ? ` ・ 已採集 ${g.sets} 組` : ''}</div></div><button class="blue" data-u="${u}">前往</button></div>`; }).join('')}
     <div class="row"><button class="plain" id="backBtn">關閉</button></div>`);
   $('#card').querySelectorAll('button[data-u]').forEach(b => b.onclick = () => { const u = +b.dataset.u; closeModal(); S.mode = 'camp'; if (u === 5) { world.teleport(-6, -2.5); return; } const [x, z] = world.STATIONS[u].pos; world.teleport(x, z + 2.2); openUnitMenu(u); });
   $('#backBtn').onclick = () => { closeModal(); S.mode = 'camp'; };
@@ -1543,14 +1660,14 @@ const readNum = el => { const v = el.value.trim(); return /^\d+$/.test(v) ? pars
 const FIG = '<canvas class="fig" id="fig" width="400" height="260"></canvas>';
 function bossShell(stem, body, hint, tools = '') {
   const U = UNITS[UB.u];
-  openModal(`<h2>${UB.title || U.guard} <span>第 ${UB.round - (UB.base || 0)} 回合 ・ 守衛還有 ${UB.hp} 滴血，你有 ${S.hp} 顆心</span></h2><div class="stem">${stem}</div>${body}${tools ? `<div class="row tools">${tools}</div>` : ''}<div id="msg"></div><div class="row"><button class="primary" id="okBtn">確定</button><button class="plain" id="hintBtn">💡 提示</button></div>`);
-  $('#hintBtn').onclick = () => { if (!bossDone) $('#msg').innerHTML = `<div class="msg hint">💡 ${typeof hint === 'function' ? hint() : hint}</div>`; };
+  openModal(`<h2>${UB.title || U.guard} <span>第 ${UB.round - (UB.base || 0)} 回合 ・ 守衛還有 ${UB.hp} 滴血，你有 ${S.hp} 顆心</span></h2><div class="stem">${stem}</div>${body}${tools ? `<div class="row tools">${tools}</div>` : ''}<div id="msg"></div><div class="row"><button class="primary" id="okBtn">確定</button><button class="plain" id="hintBtn"><i class="ic ic-bulb"></i>提示</button></div>`);
+  $('#hintBtn').onclick = () => { if (!bossDone) $('#msg').innerHTML = `<div class="msg hint">${typeof hint === 'function' ? hint() : hint}</div>`; };
 }
 function bossResolve(ok, exp) {
   if (bossDone) return; bossDone = true;
   $('#card').querySelectorAll('#okBtn, #hintBtn, .tools button').forEach(b => b.disabled = true);
-  if (ok) { sfx.hit(); UB.hp--; if (UB.onHit) UB.onHit(); else world.unitBossHit(); $('#msg').innerHTML = `<div class="msg ok">✔ ${exp} ${UB.asStage ? '完成一回合！' : UB.title ? UB.title + '受傷了！' : '守衛受傷了！'}</div><div class="row"><button class="primary" id="n">繼續 ▶</button></div>`; }
-  else { sfx.bad(); S.hp--; hud(); world.playerHit(); if (UB.onMiss) UB.onMiss(); $('#msg').innerHTML = `<div class="msg bad">${exp}<br>${UB.asStage ? '少了一顆心。' : (UB.title || '守衛') + '攻擊了你，少了一顆心。'}</div><div class="row"><button class="primary" id="n">繼續 ▶</button></div>`; }
+  if (ok) { sfx.hit(); UB.hp--; if (UB.onHit) UB.onHit(); else world.unitBossHit(); $('#msg').innerHTML = `<div class="msg ok">${exp} ${UB.asStage ? '完成一回合！' : UB.title ? UB.title + '受傷了！' : '守衛受傷了！'}</div><div class="row"><button class="primary" id="n">繼續<i class="ic ic-next r"></i></button></div>`; }
+  else { sfx.bad(); S.hp--; hud(); world.playerHit(); if (UB.onMiss) UB.onMiss(); $('#msg').innerHTML = `<div class="msg bad">${exp}<br>${UB.asStage ? '少了一顆心。' : (UB.title || '守衛') + '攻擊了你，少了一顆心。'}</div><div class="row"><button class="primary" id="n">繼續<i class="ic ic-next r"></i></button></div>`; }
   $('#n').onclick = () => { closeModal(); setTimeout(unitBossRound, 400); };
 }
 function dragOn(cv, fn) { cv.style.touchAction = 'none'; let down = false; cv.addEventListener('pointerdown', e => { if (bossDone) return; down = true; fn(e, true); }); cv.addEventListener('pointermove', e => { if (down && !bossDone) fn(e, false); }); ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => cv.addEventListener(t, () => down = false)); }
@@ -1560,7 +1677,7 @@ BOSS_GAMES[1] = () => {
   const step = pick([10, 100, 1000]), start = step === 10 ? rnd(1, 8) * 1000 + rnd(0, 8) * 100 : step === 100 ? rnd(0, 8) * 1000 : 0, half = UB.round >= 3;
   let k; do { k = half ? rnd(1, 19) : rnd(1, 9) * 2; } while (k === 10);
   const target = start + k * step / 2, x0 = 30, x1 = 370, y = 160, dx = (x1 - x0) / 20; let sel = null;
-  bossShell(`數字史萊姆躲在數線上的 <b>${target}</b>，點出牠躲在哪裡！`, FIG, '先看標了數字的兩個刻度差多少、中間有幾大格，算出一大格是多少；每一大格又平分成兩小格。', '<button class="plain" id="lBtn">◀ 左移一小格</button><button class="plain" id="rBtn">右移一小格 ▶</button>');
+  bossShell(`數字史萊姆躲在數線上的 <b>${target}</b>，點出牠躲在哪裡！`, FIG, '先看標了數字的兩個刻度差多少、中間有幾大格，算出一大格是多少；每一大格又平分成兩小格。', '<button class="plain" id="lBtn">◀ 左移一小格</button><button class="plain" id="rBtn">右移一小格<i class="ic ic-next r"></i></button>');
   const cv = $('#fig'), ctx = cv.getContext('2d');
   function draw() {
     clearFig(ctx); ctx.strokeStyle = '#333'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x0 - 12, y); ctx.lineTo(x1 + 12, y); ctx.stroke();
@@ -1743,9 +1860,9 @@ function enterScene(u) {
 }
 function exitScene() { stopStage(false); world.exitScene(); S.mode = 'camp'; S.scene = 0; document.body.classList.remove('inscene'); $('#speech').classList.remove('show'); closeModal(); }
 function renderSceneMenu() {
-  const u = S.scene; if (!u) return; const st = getStages(u), g = getU(u);
-  $('#sceneMenu').innerHTML = stageNames(u).map((n, i) => `<button class="${stageOpen(u, i) ? (st[i] ? 'plain' : 'primary') : 'plain'}" data-st="${i}" ${stageOpen(u, i) ? '' : 'disabled'}>${st[i] ? '⭐ ' : stageOpen(u, i) ? '' : '🔒 '}第 ${i + 1} 關 ${n}</button>`).join('')
-    + `<button class="${bossOpen(u) ? 'primary' : 'plain'}" id="sbossBtn" ${bossOpen(u) ? '' : 'disabled'}>${g.star ? '⭐ ' : bossOpen(u) ? '' : '🔒 '}魔王 ${BOSS_NAME[SCENES[u].boss]}</button><button class="blue" id="exitBtn">回營地</button><button class="plain" id="sceneHomeBtn"><i class="ico star"></i>群島地圖</button>`;
+  const u = S.scene; if (!u) return; const st = getStages(u), g = getU(u), bo = bossOpen(u), STAR = '<span class="badge"><i class="ico star"></i></span>';
+  $('#sceneMenu').innerHTML = stageNames(u).map((n, i) => { const open = stageOpen(u, i); return `<button class="dock ${open ? (st[i] ? 'green' : 'primary') : 'locked'}" data-st="${i}" ${open ? '' : 'disabled'}><span class="dnum">${open ? i + 1 : '<i class="ic ic-lock"></i>'}</span><span>${n}</span>${st[i] ? STAR : ''}</button>`; }).join('')
+    + `<button class="dock ${bo ? (g.star ? 'green' : 'danger') : 'locked'}" id="sbossBtn" ${bo ? '' : 'disabled'}><span class="dnum"><i class="ic ${bo ? 'ic-skull' : 'ic-lock'}"></i></span><span>${BOSS_NAME[SCENES[u].boss]}</span>${g.star ? STAR : ''}</button><button class="dock blue" id="exitBtn"><i class="ic ic-home"></i><span>回營地</span></button><button class="dock plain" id="sceneHomeBtn"><i class="ic ic-flag"></i><span>群島地圖</span></button>`;
   $('#sceneMenu').querySelectorAll('button[data-st]').forEach(b => b.onclick = () => { const i = +b.dataset.st, [x, z] = world.SCENE_SPOTS['stage' + (i + 1)]; world.teleport(x, z + 2.5); startStage(u, i); });
   $('#sbossBtn').onclick = () => startSceneBoss(u); $('#exitBtn').onclick = exitScene; $('#sceneHomeBtn').onclick = openWorldMap;
 }
@@ -1777,15 +1894,15 @@ function nextCollect() { if (S.mode !== 'collect') return; const q = makeQuestio
 world.setOnBlockHit(i => {
   if (S.mode === 'task' && TK.opts) { const sw = world.isCarrying(); world.carryBlock(i); qbarMsg(`${sw ? '換成' : '撿起'} ${TK.opts[i]}，走到橘色的缺口放上去${sw ? '' : '；撞到別的木板可以換'}`, 'hint'); return; }
   if (S.mode !== 'collect' || CUR.locked) return; const ok = CUR.ch.labels[i] === CUR.ch.ans;
-  if (ok) { CUR.locked = true; CUR.correct++; sfx.ok(); world.collectPop(i, true); const amt = CUR.wrongThis ? 1 : 2; S[CUR.q.reward] += amt; hud(); qbarMsg(`✔ ${CUR.q.exp} 獲得 ${amt} 個${CUR.q.reward === 'wood' ? '木材' : '角尺碎片'}`, 'ok'); setTimeout(CUR.correct >= CUR.need ? winStage : nextCollect, 1100); }
-  else { CUR.wrong++; CUR.wrongThis = true; sfx.bad(); world.collectPop(i, false); S.hp--; hud(); world.playerHit(); qbarMsg(`✘ 不是「${CUR.ch.labels[i]}」。${CUR.q.hint}`, 'bad'); if (S.hp <= 0) { CUR.locked = true; setTimeout(failStage, 700); } }
+  if (ok) { CUR.locked = true; CUR.correct++; sfx.ok(); world.collectPop(i, true); const amt = CUR.wrongThis ? 1 : 2; S[CUR.q.reward] += amt; hud(); qbarMsg(`${CUR.q.exp} 獲得 ${amt} 個${CUR.q.reward === 'wood' ? '木材' : '角尺碎片'}`, 'ok'); setTimeout(CUR.correct >= CUR.need ? winStage : nextCollect, 1100); }
+  else { CUR.wrong++; CUR.wrongThis = true; sfx.bad(); world.collectPop(i, false); S.hp--; hud(); world.playerHit(); qbarMsg(`不是「${CUR.ch.labels[i]}」。${CUR.q.hint}`, 'bad'); if (S.hp <= 0) { CUR.locked = true; setTimeout(failStage, 700); } }
 });
 function nextWave() { if (S.mode !== 'defend' && S.mode !== 'zboss') return; CUR.waves++; const q = makeQuestion(CUR.u, CUR.boss || CUR.waves > 4), ch = toChoice(q); CUR.q = q; CUR.ch = ch; CUR.locked = false; window.__q = q; qbarQuestion(q, `第 ${CUR.waves} / ${CUR.need} 波 ・ 主角不能走動，點（或按殭屍身上的黃色數字鍵）正確答案的殭屍射箭`); world.defendSpawn(ch.labels, (CUR.boss ? .7 : .5) + CUR.waves * .05, CUR.boss && CUR.waves === CUR.need); /* 放慢：第 1 波約 14 秒走到，第 8 波約 9 秒，加上出場先停 3 秒讀題 */ }
 world.setOnZombie(i => {
   if ((S.mode !== 'defend' && S.mode !== 'zboss') || CUR.locked) return; CUR.locked = true; const ok = CUR.ch.labels[i] === CUR.ch.ans;
   world.defendShoot(i, ok, () => {
-    if (ok) { CUR.correct++; sfx.hit(); S[CUR.q.reward] += 2; hud(); qbarMsg(`✔ ${CUR.q.exp}`, 'ok'); setTimeout(CUR.correct >= CUR.need ? (CUR.boss ? winSceneBoss : winStage) : nextWave, 1000); }
-    else { sfx.bad(); S.hp--; hud(); world.playerHit(); world.defendClear(); qbarMsg(`✘ 那隻拿的是「${CUR.ch.labels[i]}」，正確答案是「${CUR.ch.ans}」。${CUR.q.exp}`, 'bad'); setTimeout(S.hp <= 0 ? (CUR.boss ? failBoss : failStage) : nextWave, 1600); }
+    if (ok) { CUR.correct++; sfx.hit(); S[CUR.q.reward] += 2; hud(); qbarMsg(`${CUR.q.exp}`, 'ok'); setTimeout(CUR.correct >= CUR.need ? (CUR.boss ? winSceneBoss : winStage) : nextWave, 1000); }
+    else { sfx.bad(); S.hp--; hud(); world.playerHit(); world.defendClear(); qbarMsg(`那隻拿的是「${CUR.ch.labels[i]}」，正確答案是「${CUR.ch.ans}」。${CUR.q.exp}`, 'bad'); setTimeout(S.hp <= 0 ? (CUR.boss ? failBoss : failStage) : nextWave, 1600); }
   });
 }, i => {
   if ((S.mode !== 'defend' && S.mode !== 'zboss') || CUR.locked) return; CUR.locked = true; sfx.bad(); S.hp--; hud(); world.playerHit(); world.defendClear(); qbarMsg(`殭屍碰到你了！正確答案是「${CUR.ch.ans}」。${CUR.q.exp}`, 'bad'); setTimeout(S.hp <= 0 ? (CUR.boss ? failBoss : failStage) : nextWave, 1600);
@@ -1806,8 +1923,8 @@ function creeperRound() {
   openModal(`<h2>苦力怕 <span>第 ${CUR.correct + 1} / 3 題 ・ 你有 ${S.hp} 顆心</span></h2><div class="fuse"><div id="fuseBar"></div></div><div class="stem">${q.stem}</div>${q.draw ? FIG : ''}${answerUI(q)}<div id="msg"></div>`);
   if (q.draw) q.draw($('#fig').getContext('2d'));
   const finish = (ok, text) => { if (done) return; done = true; clearInterval(creeperTick); creeperTick = null; world.creeperFuse(0);
-    if (ok) { sfx.hit(); CUR.correct++; world.creeperHurt(); $('#msg').innerHTML = `<div class="msg ok">✔ ${q.exp} 苦力怕退後了！</div><div class="row"><button class="primary" id="n">繼續 ▶</button></div>`; }
-    else { sfx.bad(); S.hp--; hud(); world.creeperBoom(); world.playerHit(); showCorrect(q); $('#msg').innerHTML = `<div class="msg bad">${text} 正確答案是「${ansText(q)}」。${q.exp}</div><div class="row"><button class="primary" id="n">繼續 ▶</button></div>`; }
+    if (ok) { sfx.hit(); CUR.correct++; world.creeperHurt(); $('#msg').innerHTML = `<div class="msg ok">${q.exp} 苦力怕退後了！</div><div class="row"><button class="primary" id="n">繼續<i class="ic ic-next r"></i></button></div>`; }
+    else { sfx.bad(); S.hp--; hud(); world.creeperBoom(); world.playerHit(); showCorrect(q); $('#msg').innerHTML = `<div class="msg bad">${text} 正確答案是「${ansText(q)}」。${q.exp}</div><div class="row"><button class="primary" id="n">繼續<i class="ic ic-next r"></i></button></div>`; }
     $('#n').onclick = () => { closeModal(); setTimeout(creeperRound, 700); }; };
   creeperTick = setInterval(() => { const k = Math.min(1, (performance.now() - T0) / LIMIT); const bar = $('#fuseBar'); if (bar) bar.style.width = (100 - k * 100) + '%'; world.creeperFuse(k); if (k >= 1) finish(false, '時間到，苦力怕爆炸了！'); }, 100);
   bindAnswer(q, (v, b) => { if (done) return; const ok = isCorrect(q, v); markAnswer(q, ok, b); finish(ok, '答錯了，苦力怕爆炸了！'); });
@@ -1815,23 +1932,24 @@ function creeperRound() {
 function stopStage(toScene = true) { world.setSpotLabels(true); setTimeout(() => onSpotHandler(world.getSpot()), 50); if (creeperTick) { clearInterval(creeperTick); creeperTick = null; } clearTimeout(TK.timer); TK.opts = null; world.taskClear(); taskPanelHide(); world.collectClear(); world.defendClear(); world.creeperHide(); world.igolemHide(); world.setCam('follow'); qbarHide(); UB.onWin = UB.onLose = UB.onHit = UB.onMiss = null; UB.title = null; UB.asStage = false; UB.base = 0; if (toScene) { S.mode = 'scene'; renderSceneMenu(); } }
 function winStage() {
   const u = CUR.u, i = CUR.stage; getStages(u)[i] = true; S.wood += 4; S.shard += 4; S.stone += 3; S.glass += 1; hud(); stopStage(false); sfx.craft(); renderSceneMenu();
-  const next = i < 2 ? `<button class="blue" id="nextStage">直接進第 ${i + 2} 關</button>` : bossOpen(u) ? `<button class="blue" id="nextStage">挑戰魔王</button>` : '';
-  openModal(`<h2>🎉 通過第 ${i + 1} 關 ${stageNames(u)[i]}！</h2><div class="stem">獎勵木材 4、角尺碎片 4、石頭 3、玻璃 1。${i < 2 ? `第 ${i + 2} 關「${stageNames(u)[i + 1]}」解鎖了。` : `魔王「${BOSS_NAME[SCENES[u].boss]}」出現在競技場！`}</div><div class="row"><button class="primary" id="backBtn">繼續探索</button>${next}</div>`);
+  const next = i < 2 ? `<button class="primary" id="nextStage">前往第 ${i + 2} 關<i class="ic ic-next r"></i></button>` : bossOpen(u) ? `<button class="danger" id="nextStage"><i class="ic ic-skull"></i>挑戰魔王</button>` : '';
+  openModal(`<h2 class="win">通過第 ${i + 1} 關 ${stageNames(u)[i]}！</h2>${loot({ wood: 4, shard: 4, stone: 3, glass: 1 })}<div class="stem center">${i < 2 ? `第 ${i + 2} 關「${stageNames(u)[i + 1]}」解鎖了。` : `魔王「${BOSS_NAME[SCENES[u].boss]}」出現在競技場！`}</div><div class="row center">${next}<button class="plain" id="backBtn">留在場景</button></div>`);
   $('#backBtn').onclick = () => { closeModal(); S.mode = 'scene'; }; const nb = $('#nextStage'); if (nb) nb.onclick = () => { closeModal(); S.mode = 'scene'; if (i < 2) { const [x, z] = world.SCENE_SPOTS['stage' + (i + 2)]; world.teleport(x, z + 2.5); startStage(u, i + 1); } else startSceneBoss(u); };
 }
-function failStage() { const u = CUR.u, i = CUR.stage; stopStage(false); S.hp = 3; hud(); openModal(`<h2>關卡失敗</h2><div class="stem">心用完了。可以再挑戰一次，或回營地採集多練幾題。</div><div class="row"><button class="primary" id="againBtn">再挑戰</button><button class="plain" id="backBtn">回場景</button></div>`); $('#againBtn').onclick = () => { closeModal(); S.mode = 'scene'; startStage(u, i); }; $('#backBtn').onclick = () => { closeModal(); S.mode = 'scene'; renderSceneMenu(); }; }
+function failStage() { const u = CUR.u, i = CUR.stage; stopStage(false); S.hp = 3; hud(); openModal(`<h2 class="lose">差一點就過關了</h2><div class="stem">心用完了。可以再挑戰一次，或回營地採集多練幾題。</div><div class="row"><button class="primary" id="againBtn">再挑戰</button><button class="plain" id="backBtn">回場景</button></div>`); $('#againBtn').onclick = () => { closeModal(); S.mode = 'scene'; startStage(u, i); }; $('#backBtn').onclick = () => { closeModal(); S.mode = 'scene'; renderSceneMenu(); }; }
 function winSceneBoss() {
   const u = CUR.u, first = !getU(u).star; getU(u).star = true; S.wood += 8; S.shard += 8; S.stone += 5; S.glass += 3; hud(); stopStage(false); music.setTheme('camp'); sfx.craft(); renderSceneMenu();
-  openModal(`<h2>🎉 打倒${BOSS_NAME[SCENES[u].boss]}！</h2><div class="stem">${first ? `拿到第 ${u} 單元的星星 ⭐，` : '再次獲勝，'}獎勵木材 8 個、角尺碎片 8 個。<br>星星：${Object.values(S.units).filter(x => x.star).length} / 9</div><div class="row"><button class="primary" id="backBtn">回場景</button><button class="blue" id="exitBtn">回營地</button></div>`);
+  openModal(`<h2 class="win">打倒${BOSS_NAME[SCENES[u].boss]}！</h2>${loot({ star: first ? 1 : 0, wood: 8, shard: 8, stone: 5, glass: 3 })}<div class="stem center">${first ? `拿到第 ${u} 單元的星星！` : '再次獲勝！'}目前有 ${Object.values(S.units).filter(x => x.star).length} / 9 顆星星。</div><div class="row center"><button class="primary" id="mapBtn"><i class="ic ic-flag"></i>回群島地圖</button><button class="plain" id="backBtn">留在場景</button><button class="blue" id="exitBtn">回營地</button></div>`);
+  $('#mapBtn').onclick = openWorldMap;
   $('#backBtn').onclick = () => { closeModal(); S.mode = 'scene'; }; $('#exitBtn').onclick = exitScene;
 }
-function failBoss() { stopStage(false); S.hp = 3; hud(); music.setTheme('camp'); openModal(`<h2>被魔王擊退了</h2><div class="stem">三個關卡都可以重玩來多練習，再回來挑戰。</div><div class="row"><button class="primary" id="backBtn">回場景</button></div>`); $('#backBtn').onclick = () => { closeModal(); S.mode = 'scene'; renderSceneMenu(); }; }
+function failBoss() { stopStage(false); S.hp = 3; hud(); music.setTheme('camp'); openModal(`<h2 class="lose">被魔王擊退了</h2><div class="stem">三個關卡都可以重玩來多練習，再回來挑戰。</div><div class="row"><button class="primary" id="backBtn">回場景</button></div>`); $('#backBtn').onclick = () => { closeModal(); S.mode = 'scene'; renderSceneMenu(); }; }
 $('#qQuit').onclick = () => { if (['collect', 'defend', 'zboss', 'task', 'gate'].includes(S.mode)) { stopStage(); music.setTheme('camp'); toast('已放棄這一關'); } };
 // 站點選單：進入場景、採集練習
 function openUnitMenu(u) {
   const U = UNITS[u], g = getU(u), st = getStages(u);
-  openModal(`<h2>第 ${u} 單元 ${U.name} ${g.star ? '⭐' : ''}</h2><div class="stem">${U.concepts.join('、')}</div>
-    <div class="recipe"><div><div class="name">${SCENES[u].name}</div><div class="need">${stageNames(u).map((n, i) => `${st[i] ? '⭐' : '☐'} ${n}`).join('　')}　${g.star ? '⭐' : '☐'} 魔王 ${BOSS_NAME[SCENES[u].boss]}</div></div><button class="primary" id="uGo">進入場景</button></div>
+  openModal(`<h2>第 ${u} 單元 ${U.name} ${g.star ? '<i class="ico star"></i>' : ''}</h2><div class="stem">${U.concepts.join('、')}</div>
+    <div class="recipe"><div><div class="name">${SCENES[u].name}</div><div class="need">${stageNames(u).map((n, i) => `${st[i] ? '<i class="mat star"></i>' : '<span class="todo"></span>'}${n}`).join('　')}　${g.star ? '<i class="mat star"></i>' : '<span class="todo"></span>'}魔王 ${BOSS_NAME[SCENES[u].boss]}</div></div><button class="primary" id="uGo">進入場景</button></div>
     <div class="recipe"><div><div class="name">採集練習 ${g.sets ? `<span class="owned">已完成 ${g.sets} 組</span>` : ''}</div><div class="need">5 題一組，答對換木材與角尺碎片</div></div><button class="blue" id="uPractice">採集</button></div>
     <div class="row"><button class="plain" id="backBtn">關閉</button></div>`);
   $('#uGo').onclick = () => enterScene(u); $('#uPractice').onclick = () => startPractice(u); $('#backBtn').onclick = () => { closeModal(); S.mode = 'camp'; };
@@ -1859,12 +1977,13 @@ function selectIsland(u) { S.mapSel = u; world.mapFocus(u); renderWorldPanel(u);
 function renderWorldPanel(u) {
   const total = ALL_UNITS.reduce((a, k) => a + unitProgress(k).nodes.filter(Boolean).length, 0), stars = Object.values(S.units).filter(x => x.star).length;
   const p = unitProgress(u), names = u === 5 ? U5_NODES : [...stageNames(u), `魔王 ${BOSS_NAME[SCENES[u].boss]}`];
-  $('#worldPanel').innerHTML = `<div class="wp-head"><i class="ico face"></i><div><b>方塊學園 ・ 三上數學</b><small>冒險進度 ${total} / 36 關 ・ ⭐ ${stars} / 9</small></div></div>
-    <div class="wp-bar"><div style="width:${Math.round(total / 36 * 100)}%"></div></div>
-    <div class="wp-tabs">${ALL_UNITS.map(k => { const pk = unitProgress(k); return `<button class="${k === u ? 'sel' : ''}${pk.next < 0 ? ' done' : ''}" data-u="${k}"><b>${k}</b><small>${pk.nodes.filter(Boolean).length}/4</small></button>`; }).join('')}</div>
-    <div class="wp-title">第 ${u} 單元 ${UNITS[u].name}<small>${ISLAND_NAME[u]} ・ ${UNITS[u].concepts.join('、')}</small></div>
-    <div class="wp-list">${names.map((n, i) => `<div class="wp-row ${p.nodes[i] ? 'done' : p.next === i ? 'next' : ''}"><span class="num">${i === 3 ? '★' : i + 1}</span><span class="nm">${n}</span><span class="st">${p.nodes[i] ? '已完成' : p.next === i ? '下一站' : '未解鎖'}</span></div>`).join('')}</div>
-    <div class="row"><button class="primary" id="wpGo">${p.next < 0 ? '再挑戰魔王' : `繼續冒險：${names[p.next]} →`}</button><button class="blue" id="wpEnter">${u === 5 ? '回營地' : '進入場景'}</button></div>`;
+  $('#worldPanel').innerHTML = `<div class="wp-head"><i class="ico face"></i><div><div class="logo">方塊<em>學園</em></div><small>三上數學冒險</small></div></div>
+    <div class="wp-prog"><span>進度 ${total} / 36</span><div class="wp-bar"><div style="width:${Math.round(total / 36 * 100)}%"></div></div><span><i class="ico star"></i>${stars} / 9</span></div>
+    <div class="wp-tabs">${ALL_UNITS.map(k => { const pk = unitProgress(k); return `<button class="${k === u ? 'sel' : ''}${pk.next < 0 ? ' done' : ''}" data-u="${k}" aria-label="第 ${k} 單元" title="第 ${k} 單元 ${UNITS[k].name}"><b>${k}</b><span class="dots">${pk.nodes.map(x => `<i class="${x ? 'on' : ''}"></i>`).join('')}</span></button>`; }).join('')}</div>
+    <div class="wp-eyebrow">第 ${u} 單元 ・ ${ISLAND_NAME[u]}</div>
+    <div class="wp-title">${UNITS[u].name}<small>${UNITS[u].concepts.join('、')}</small></div>
+    <div class="wp-list">${names.map((n, i) => { const done = p.nodes[i], nx = p.next === i; return `<div class="wp-row ${done ? 'done' : nx ? 'next' : 'lock'}"><span class="num">${done ? '<i class="ic ic-check"></i>' : nx ? i + 1 : '<i class="ic ic-lock"></i>'}</span><span class="nm">${n}</span><span class="st">${done ? '已完成' : nx ? '下一站' : '未解鎖'}</span></div>`; }).join('')}</div>
+    <div class="row"><button class="primary" id="wpGo">${p.next < 0 ? '再挑戰一次<small>全部完成了</small>' : `繼續冒險<small>${names[p.next]}</small>`}</button><button class="blue" id="wpEnter">${u === 5 ? '回營地' : '進入場景'}</button></div>`;
   $('#worldPanel').querySelectorAll('button[data-u]').forEach(b => b.onclick = () => selectIsland(+b.dataset.u));
   $('#wpGo').onclick = () => continueAdventure(u); $('#wpEnter').onclick = () => { closeWorldMap(); if (u !== 5) enterScene(u); };
 }
@@ -1917,8 +2036,8 @@ function renderCoinPanel() {
 function payCoins() {
   if (S.mode !== 'task' || TK.paying) return; const total = TK.counts.reduce((a, c, k) => a + c * COIN_VAL[k], 0); if (!total) { toast('先放硬幣到付款盤', '#d64545'); return; }
   TK.paying = true;
-  if (total === TK.target) { sfx.ok(); world.villagerReact(true); S.wood += 2; S.shard += 2; hud(); qbarMsg(`✔ 剛好 ${total} 元，村民很滿意！${TK.i === 3 ? '超過 10 個百就進位：15 個百是 1 個千加 5 個百。' : TK.i === 4 ? '沒有千元就用 10 個百代替 1 個千。' : ''}`, 'ok'); setTimeout(() => { TK.paying = false; nextCustomer(); }, 1500); }
-  else { sfx.bad(); world.villagerReact(false); S.hp--; hud(); world.playerHit(); const d = total - TK.target; qbarMsg(`✘ 村民搖頭：${d > 0 ? `多了 ${d} 元` : `少了 ${-d} 元`}。調整付款盤再付一次。`, 'bad'); TK.paying = false; if (S.hp <= 0) setTimeout(failStage, 700); }
+  if (total === TK.target) { sfx.ok(); world.villagerReact(true); S.wood += 2; S.shard += 2; hud(); qbarMsg(`剛好 ${total} 元，村民很滿意！${TK.i === 3 ? '超過 10 個百就進位：15 個百是 1 個千加 5 個百。' : TK.i === 4 ? '沒有千元就用 10 個百代替 1 個千。' : ''}`, 'ok'); setTimeout(() => { TK.paying = false; nextCustomer(); }, 1500); }
+  else { sfx.bad(); world.villagerReact(false); S.hp--; hud(); world.playerHit(); const d = total - TK.target; qbarMsg(`村民搖頭：${d > 0 ? `多了 ${d} 元` : `少了 ${-d} 元`}。調整付款盤再付一次。`, 'bad'); TK.paying = false; if (S.hp <= 0) setTimeout(failStage, 700); }
 }
 // ---- 任務二：數線吊橋（數數、數線）----
 function taskBridge(u) {
@@ -1935,7 +2054,7 @@ function nextCrossing() {
 }
 function nextGap() {
   if (S.mode !== 'task') return;
-  if (TK.gi >= TK.gaps.length) { TK.opts = null; qbarMsg('✔ 吊橋修好了，羊過橋囉！', 'ok'); world.bridgeCross(() => setTimeout(nextCrossing, 500)); return; }
+  if (TK.gi >= TK.gaps.length) { TK.opts = null; qbarMsg('吊橋修好了，羊過橋囉！', 'ok'); world.bridgeCross(() => setTimeout(nextCrossing, 500)); return; }
   const g = TK.gaps[TK.gi], ans = TK.labels[g], v = +ans, step = TK.step, opts = [v], seen = new Set([v]);
   for (const d of [step, -step, step === 1 ? 10 : 1, -(step === 1 ? 10 : 1), 2 * step, step === 100 ? 1000 : 100]) { if (opts.length >= 4) break; const w = v + d; if (w >= 0 && !seen.has(w) && !TK.labels.includes(String(w))) { seen.add(w); opts.push(w); } }
   while (opts.length < 4) opts.push(v + opts.length * 7);
@@ -1945,8 +2064,8 @@ function nextGap() {
 }
 world.setOnDeliver(i => {
   if (S.mode !== 'task' || !TK.opts) return; const label = TK.opts[i], ok = label === TK.ans;
-  if (ok) { sfx.ok(); world.bridgeFill(TK.gaps[TK.gi], label); S.wood += 1; S.shard += 1; hud(); qbarMsg(`✔ ${label} 放對了！`, 'ok'); TK.gi++; TK.opts = null; world.collectClear(); setTimeout(nextGap, 900); }
-  else { sfx.bad(); S.hp--; hud(); world.playerHit(); qbarMsg(`✘ ${label} 不對，木板斷掉了。這格要比 ${TK.labels[TK.gaps[TK.gi] - 1]} 多 ${TK.step}，再撿一塊試試。`, 'bad'); if (S.hp <= 0) setTimeout(failStage, 700); }
+  if (ok) { sfx.ok(); world.bridgeFill(TK.gaps[TK.gi], label); S.wood += 1; S.shard += 1; hud(); qbarMsg(`${label} 放對了！`, 'ok'); TK.gi++; TK.opts = null; world.collectClear(); setTimeout(nextGap, 900); }
+  else { sfx.bad(); S.hp--; hud(); world.playerHit(); qbarMsg(`${label} 不對，木板斷掉了。這格要比 ${TK.labels[TK.gaps[TK.gi] - 1]} 多 ${TK.step}，再撿一塊試試。`, 'bad'); if (S.hp <= 0) setTimeout(failStage, 700); }
 });
 // ---- 任務三：羊群過閘門（比大小）----
 function taskGates(u) {
@@ -1960,7 +2079,7 @@ function nextSheep() {
   TK.v = v; TK.arrived = false; TK.decided = false; window.__q = { ans: v > N ? 'right' : 'left' };
   world.sheepSpawn(String(v), 2.2 + TK.i * .25);
   qbarQuestion({ stem: `閘門標準是 <b>${N}</b>。走過來的羊是 <b>${v}</b>：比 ${N} 大開右門，比 ${N} 小開左門。` }, `第 ${TK.i} / ${TK.total} 隻羊 ・ 電腦按 A／D 或 ←／→，手機點畫面左半或右半`);
-  taskPanel(`<div class="row gatebtns"><button class="blue" id="gateL">◀ 比較小</button><button class="primary" id="gateR">比較大 ▶</button></div>`); $('#gateL').onclick = () => decideGate('left'); $('#gateR').onclick = () => decideGate('right');
+  taskPanel(`<div class="row gatebtns"><button class="blue" id="gateL">◀ 比較小</button><button class="primary" id="gateR">比較大<i class="ic ic-next r"></i></button></div>`); $('#gateL').onclick = () => decideGate('left'); $('#gateR').onclick = () => decideGate('right');
 }
 world.setOnSheepArrive(() => {
   if (S.mode !== 'gate') return; TK.arrived = true; qbarMsg('羊到門口了，快決定開哪一邊！', 'hint');
@@ -1969,8 +2088,8 @@ world.setOnSheepArrive(() => {
 function decideGate(dir) {
   if (S.mode !== 'gate' || TK.decided) return; if (!TK.arrived) { toast('等羊走到門口再開門', '#d64545'); return; }
   TK.decided = true; clearTimeout(TK.timer); const ok = (TK.v > TK.N) === (dir === 'right'); world.sheepGo(dir, ok);
-  if (ok) { sfx.ok(); S.shard += 2; hud(); qbarMsg(`✔ ${TK.v} ${TK.v > TK.N ? '＞' : '＜'} ${TK.N}，羊進欄了！`, 'ok'); setTimeout(nextSheep, 1500); }
-  else { sfx.bad(); S.hp--; hud(); world.playerHit(); qbarMsg(`✘ 開錯門，羊跑掉了。從千位開始比：${TK.v} 比 ${TK.N} ${TK.v > TK.N ? '大' : '小'}。`, 'bad'); setTimeout(S.hp <= 0 ? failStage : nextSheep, 1600); }
+  if (ok) { sfx.ok(); S.shard += 2; hud(); qbarMsg(`${TK.v} ${TK.v > TK.N ? '＞' : '＜'} ${TK.N}，羊進欄了！`, 'ok'); setTimeout(nextSheep, 1500); }
+  else { sfx.bad(); S.hp--; hud(); world.playerHit(); qbarMsg(`開錯門，羊跑掉了。從千位開始比：${TK.v} 比 ${TK.N} ${TK.v > TK.N ? '大' : '小'}。`, 'bad'); setTimeout(S.hp <= 0 ? failStage : nextSheep, 1600); }
 }
 $('#world').addEventListener('pointerdown', e => { if (S.mode === 'gate' && TK.arrived && !TK.decided) decideGate(e.clientX < innerWidth / 2 ? 'left' : 'right'); });
 
@@ -1985,7 +2104,7 @@ function ambushUnit() { if (S.scene) return S.scene; const done = Object.keys(S.
 function startAmbush() {
   AMB.prev = S.mode; S.mode = 'ambush'; document.body.classList.add('busy'); AMB.kind = Math.random() < .5 ? 'spider' : 'zombie'; AMB.lock = false; world.input.x = world.input.z = 0;
   world.ambushSpawn(AMB.kind); sfx.bad(); world.playerHit();
-  qbarShow(); $('#qQuit').style.display = 'none'; qbarQuestion({ stem: `⚠ ${AMB_NAME[AMB.kind]}偷襲！它正衝過來……` }, '答對題目才能把它打跑，答錯會被咬一口'); taskPanelHide();
+  qbarShow(); $('#qQuit').style.display = 'none'; qbarQuestion({ stem: `<i class="ic ic-warn"></i>${AMB_NAME[AMB.kind]}偷襲！它正衝過來……` }, '答對題目才能把它打跑，答錯會被咬一口'); taskPanelHide();
 }
 world.setOnAmbushReach(() => { if (S.mode === 'ambush') askAmbush(); });
 function askAmbush() {
@@ -2000,10 +2119,10 @@ function ambushAnswer(label) {
   $('#taskPanel').querySelectorAll('button.amb').forEach(b => { b.disabled = true; if (b.textContent.replace(/^\d/, '') === AMB.ch.ans) b.classList.add('right'); });
   if (ok) {
     sfx.ok(); world.ambushResolve(true); const drop = pick([['wood', 2, '木材 2'], ['stone', 2, '石頭 2'], ['glass', 1, '玻璃 1'], ['stone', 1, '石頭 1'], ['wood', 1, '木材 1']]); S[drop[0]] += drop[1]; hud();
-    qbarMsg(`✔ 答對了！${name}被打跑，掉出 ${drop[2]}。${AMB.q.exp || ''}`, 'ok'); setTimeout(endAmbush, 1800);
+    qbarMsg(`答對了！${name}被打跑，掉出 ${drop[2]}。${AMB.q.exp || ''}`, 'ok'); setTimeout(endAmbush, 1800);
   } else {
     sfx.bad(); S.hp--; hud(); world.playerHit(); world.ambushResolve(false);
-    qbarMsg(`✘ ${label === null ? '太慢了' : '答錯了'}，被${name}咬了一口！正確答案是 ${AMB.ch.ans}。${AMB.q.hint || ''}`, 'bad');
+    qbarMsg(`${label === null ? '太慢了' : '答錯了'}，被${name}咬了一口！正確答案是 ${AMB.ch.ans}。${AMB.q.hint || ''}`, 'bad');
     if (S.hp <= 0) setTimeout(ambushDefeat, 1200); else setTimeout(askAmbush, 2200);
   }
 }
@@ -2082,19 +2201,35 @@ hud();
 // ============================================================
 const isNewPlayer = () => !S.wood && !S.shard && !S.gear.bow && !Object.values(S.units || {}).some(x => x.sets || x.star || (x.stages || []).some(Boolean));
 function showHelp(cb) {
-  openModal(`<h2>方塊學園 <span>三上數學冒險 ・ 操作說明</span></h2>
-    <div class="stem">九個單元就是九座島，每座島有三關和一個魔王。答對題目才能撿方塊、射殭屍、合成裝備；收集到的材料可以回營地蓋自己的家。</div>
-    <div class="msg ok">走動：電腦用 W A S D 或方向鍵（先點一下遊戲畫面；中文輸入法開著也沒關係），或用滑鼠拖左下角的搖桿；手機用搖桿。走到祭壇、工作臺、牌子旁邊，按 E 或點提示就能互動，下方按鈕可以直接傳送。</div>
-    <div class="msg hint">1. 島上三座祭壇：<b>撿方塊</b>點寫著正確答案的方塊；<b>守衛戰</b>點（或按數字鍵）寫著正確答案的殭屍射箭，主角不能走動；<b>工匠試煉</b>輸入答案合成。三關都過才能打魔王。<br>2. 營地：採集練習題拿木材、工作臺合成木弓、挑戰狐狸、藏寶圖；南邊「我的家」用木材、石頭、玻璃蓋房子。<br>3. 走路時小心蜘蛛和殭屍偷襲，15 秒內答對才能脫身，答錯會扣一顆心。<br>4. 想換單元或看進度，按「群島地圖」回大世界。</div>
-    <div class="note">題目依康軒三上各單元的觀念設計，每次都是新的變化題。提示永遠免費，答錯不扣材料。</div>
-    <div class="row"><button class="primary" id="go">開始</button></div>`);
+  openModal(`<h2><i class="ico face"></i>怎麼玩 <span>方塊學園 ・ 三上數學冒險</span></h2>
+    <div class="stem">九個單元是九座島。每座島有三關和一個魔王，答對題目就能蒐集方塊，回營地蓋自己的家。</div>
+    <div class="msg ok">走動：電腦用 <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 或方向鍵（中文輸入法開著也可以），也能用滑鼠拖左下角的搖桿；手機用搖桿。走到祭壇、工作臺或牌子旁邊，按 <kbd>E</kbd> 或點黃色提示就能互動。</div>
+    <div class="help-grid">
+      <div class="help-c"><b><i class="ico pick"></i>闖三關</b>撿方塊：走去撞正確答案。守衛戰：點正確答案的殭屍射箭。工匠試煉：動手算出答案。三關都過才能打魔王。</div>
+      <div class="help-c"><b><i class="ico heart"></i>小心偷襲</b>走路時蜘蛛和殭屍會衝過來，15 秒內答對才能脫身，答錯會少一顆心。</div>
+      <div class="help-c"><b><i class="ico wood"></i>蓋我的家</b>過關和打跑怪物會拿到木材、石頭、玻璃，回營地南邊的建地蓋房子。</div>
+    </div>
+    <div class="note">每一題都是新的變化題。提示永遠免費，答錯不會扣材料。想換單元就按「群島地圖」。</div>
+    <div class="row center"><button class="primary" id="go">開始冒險</button></div>`);
   $('#go').onclick = () => { closeModal(); beep(523, .1); cb && cb(); };
 }
 function confirmReset() {
-  openModal(`<h2>重新開始</h2><div class="stem">確定要刪掉所有進度嗎？星星、材料、裝備和蓋好的房子都會不見，而且救不回來。</div><div class="row"><button class="plain" id="resetNo">取消</button><button class="primary" id="resetYes" style="background:#d64545">全部刪除</button></div>`);
+  openModal(`<h2>重新開始</h2><div class="stem">確定要刪掉所有進度嗎？星星、材料、裝備和蓋好的房子都會不見，而且救不回來。</div><div class="row"><button class="plain" id="resetNo">取消</button><button class="danger" id="resetYes">全部刪除</button></div>`);
   $('#resetNo').onclick = closeModal; $('#resetYes').onclick = () => { try { localStorage.removeItem('u5game'); } catch (e) {} location.reload(); };
 }
-$('#mapHelp').onclick = () => showHelp(); $('#mapRestart').onclick = confirmReset;
+function openSettings() {
+  if (!['camp', 'scene', 'map'].includes(S.mode)) { toast('關卡進行中，先完成或放棄這一關', '#e5484d'); return; }
+  openModal(`<h2><i class="ic ic-gear"></i>設定</h2><div class="set-list">
+    <button class="set-row" id="setMusic"><i class="ic ic-note"></i>背景音樂<b>${music.on ? '開' : '關'}</b></button>
+    <button class="set-row" id="setHelp"><i class="ic ic-help"></i>怎麼玩</button>
+    ${S.mode !== 'map' ? '<button class="set-row" id="setMap"><i class="ic ic-flag"></i>回群島地圖</button>' : ''}
+    <button class="set-row del" id="setReset"><i class="ic ic-cross"></i>刪除進度，重新開始</button></div>
+    <div class="about">方塊學園 ・ 三上數學冒險　版本 1.0<br>對應國小三年級上學期數學九個單元，題目都是自動產生的變化題。</div>
+    <div class="row center"><button class="plain" id="setClose">關閉</button></div>`);
+  $('#setMusic').onclick = () => { music.toggle(); openSettings(); }; $('#setHelp').onclick = () => showHelp(); const m = $('#setMap'); if (m) m.onclick = openWorldMap; $('#setReset').onclick = confirmReset; $('#setClose').onclick = closeModal;
+}
+$('#mapHelp').onclick = () => showHelp(); $('#setBtn').onclick = openSettings;
+setTimeout(() => { const sp = $('#splash'); if (sp) { sp.classList.add('hide'); setTimeout(() => sp.remove(), 600); } }, 1250);
 // 一打開遊戲就是群島地圖大世界，在這裡選單元；第一次玩先看操作說明
 openWorldMap(); if (isNewPlayer()) showHelp();
 </script>
